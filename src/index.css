@@ -96,6 +96,18 @@ body {
     radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 34%),
     radial-gradient(circle at bottom right, rgba(255, 255, 255, 0.05), transparent 30%),
     #050505;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input,
+textarea,
+select,
+[contenteditable="true"] {
+  -webkit-touch-callout: default;
+  -webkit-user-select: text;
+  user-select: text;
 }
 /* BACKGROUND */
 #particles-bg {
@@ -3775,8 +3787,9 @@ header p {
   }
 
   .birthday-hero__chip--countdown {
-    min-width: min(100%, 260px);
-    padding: 9px 16px;
+    width: fit-content;
+    min-width: 0;
+    padding: 8px 12px;
   }
 
   .birthday-hero__chip-label {
@@ -4351,8 +4364,9 @@ header p {
   }
 
   .birthday-hero__chip--countdown {
-    min-width: min(100%, 238px);
-    padding: 8px 14px;
+    width: fit-content;
+    min-width: 0;
+    padding: 7px 12px;
   }
 
   .birthday-hero__chip-value {

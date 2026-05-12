@@ -4,7 +4,7 @@ import { initBirthdaySite } from './site';
 import AdminDashboard from './AdminDashboard';
 import ThankYouStudio from './ThankYouStudio';
 
-const heroLines = ['Happy Birthday', 'Harshi'];
+const heroLines = ['Happy Birthday', 'MJ'];
 const adminEmail = import.meta.env.VITE_ADMIN_EMAIL?.trim().toLowerCase() || '';
 const authRedirectUrlFromEnv = import.meta.env.VITE_AUTH_REDIRECT_URL?.trim() || '';
 const AUTH_COOLDOWN_MS = 60 * 1000;
@@ -379,7 +379,7 @@ function BirthdayExperience({
       <main id="mainContent" className="home-shell">
         <div className="home-shell__heading">
           <h2 className="home-shell__title">Happy Birthday</h2>
-          <div className="home-shell__subtitle">Harshi</div>
+          <div className="home-shell__subtitle">Samruddhi</div>
         </div>
         <section className={`cards-stage ${cardsVisible ? 'is-visible' : ''}`}>
           <div className="cards-thread" aria-hidden="true">
