@@ -353,6 +353,13 @@ select,
     0 10px 22px rgba(103, 62, 42, 0.08);
 }
 
+.hero-title-wrap--dark .hero-line:last-child .hero-letter {
+  color: #5d1a1d;
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.65),
+    0 10px 22px rgba(95, 43, 39, 0.08);
+}
+
 .hero-title-wrap--dark .hero-letter--up {
   --start-y: 26px;
 }
@@ -3752,6 +3759,7 @@ header p {
   .birthday-hero__stage {
     gap: 14px;
     padding: 18px 10px 24px;
+    justify-content: center;
   }
 
   .birthday-hero__content {
@@ -3765,8 +3773,8 @@ header p {
   .birthday-hero__flower--mobile {
     display: block;
     position: static;
-    width: clamp(36px, 7.5vw, 48px);
-    max-height: 54px;
+    width: clamp(42px, 8.5vw, 56px);
+    max-height: 62px;
     filter: drop-shadow(0 10px 14px rgba(92, 38, 32, 0.12));
     animation: flowerFloat 6.6s ease-in-out infinite;
     flex: 0 0 auto;
@@ -4357,6 +4365,7 @@ header p {
   .birthday-hero__stage {
     gap: 8px;
     padding: 12px 8px 18px;
+    justify-content: center;
   }
 
   .birthday-hero__copy {
@@ -4379,8 +4388,8 @@ header p {
   }
 
   .birthday-hero__flower {
-    width: min(100%, 176px);
-    max-height: 220px;
+    width: min(100%, 186px);
+    max-height: 232px;
   }
 
   .birthday-hero__flower--mobile {
