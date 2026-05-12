@@ -765,7 +765,7 @@ body {
 }
 
 .admin-hero__copy {
-  padding: 28px;
+  padding: 24px;
 }
 
 .admin-hero__copy h2 {
@@ -783,7 +783,7 @@ body {
 }
 
 .admin-hero__controls {
-  margin-top: 18px;
+  margin-top: 14px;
   display: grid;
   gap: 12px;
 }
@@ -880,7 +880,7 @@ body {
 }
 
 .admin-stat {
-  padding: 18px;
+  padding: 16px;
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.06);
@@ -1010,7 +1010,7 @@ body {
 }
 
 .admin-submission {
-  padding: 22px;
+  padding: 20px;
 }
 
 .admin-submission--compact {
@@ -1117,6 +1117,10 @@ body {
   text-decoration: none;
 }
 
+.admin-asset--media {
+  gap: 10px;
+}
+
 .admin-asset__media {
   width: 100%;
   aspect-ratio: 4 / 3;
@@ -1128,6 +1132,25 @@ body {
 .admin-asset__audio {
   width: 100%;
   margin-top: 2px;
+}
+
+.admin-asset__download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #0b0b0b;
+  font-weight: 800;
+  text-decoration: none;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.admin-asset__download:hover {
+  transform: translateY(-1px);
+  opacity: 0.92;
 }
 
 .admin-asset--fallback,
@@ -1162,7 +1185,7 @@ body {
 
 .admin-submission__empty,
 .admin-empty {
-  padding: 26px;
+  padding: 20px;
   text-align: center;
 }
 
@@ -1181,7 +1204,7 @@ body {
 }
 
 .admin-empty {
-  min-height: 260px;
+  min-height: 220px;
   display: grid;
   place-items: center;
 }
@@ -1205,23 +1228,12 @@ body {
   gap: 16px;
 }
 
-.admin-dock__copy {
-  display: grid;
-  gap: 4px;
-}
-
-.admin-dock__copy strong {
-  color: #fff;
-}
-
-.admin-dock__copy span {
-  color: rgba(255, 255, 255, 0.68);
-}
-
 .admin-dock__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  justify-content: flex-end;
+  margin-left: auto;
 }
 
 @media (max-width: 640px) {
@@ -1892,7 +1904,20 @@ header p {
 
 @media (max-width: 480px) {
   /* iPhone / Small Phones */
-  #mainContent { padding-top: 32px; }
+  #mainContent { padding-top: 420px; }
+
+  .home-shell__heading {
+    padding-top: 40px;
+    margin-top: 12px;
+  }
+
+  .home-shell__title {
+    font-size: clamp(1.45rem, 8vw, 2.1rem);
+  }
+
+  .home-shell__subtitle {
+    font-size: clamp(1.1rem, 6vw, 1.55rem);
+  }
 
   .intro-text {
     font-size: 1.4rem;
@@ -2248,6 +2273,7 @@ header p {
   display: flex;
   flex-direction: column;
   z-index: 1;
+  overflow-x: clip;
 }
 
 .home-shell {
@@ -2260,6 +2286,7 @@ header p {
   gap: 24px;
   position: relative;
   isolation: isolate;
+  overflow-x: clip;
 }
 
 .home-shell > * {
@@ -2285,13 +2312,11 @@ header p {
   text-transform: uppercase;
   background: linear-gradient(
     90deg,
-    #7d1020,
-    #e2515d,
-    #f4c76c,
-    #f7efe6,
-    #8c1331,
-    #ff7f8d,
-    #7d1020
+    #ffffff 0%,
+    #d7d7d7 22%,
+    #8f8f8f 48%,
+    #141414 72%,
+    #ffffff 100%
   );
   background-size: 300% 100%;
   background-clip: text;
@@ -2311,13 +2336,11 @@ header p {
   text-transform: uppercase;
   background: linear-gradient(
     90deg,
-    #8c1331,
-    #ff7f8d,
-    #f4c76c,
-    #f7efe6,
-    #e2515d,
-    #7d1020,
-    #8c1331
+    #f7f7f7 0%,
+    #cfcfcf 20%,
+    #7f7f7f 50%,
+    #0f0f0f 74%,
+    #f8f8f8 100%
   );
   background-size: 300% 100%;
   background-clip: text;
@@ -2338,9 +2361,9 @@ header p {
 }
 
 .home-shell::before {
-  left: 50%;
-  width: 100vw;
-  transform: translateX(-50%);
+  inset-inline: 0;
+  width: 100%;
+  transform: none;
   background:
     radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.16), transparent 14%),
     radial-gradient(circle at 88% 14%, rgba(255, 210, 218, 0.18), transparent 14%),
@@ -2350,9 +2373,9 @@ header p {
 }
 
 .home-shell::after {
-  left: 50%;
-  width: 100vw;
-  transform: translateX(-50%);
+  inset-inline: 0;
+  width: 100%;
+  transform: none;
   background:
     url('/saffron-flower.png') left 2% top 8% / 230px auto no-repeat,
     url('/saffron-flower.png') right 3% top 10% / 220px auto no-repeat,
@@ -2372,6 +2395,7 @@ header p {
 .cards-stage {
   width: min(100%, 1360px);
   margin-inline: auto;
+  overflow-x: clip;
 }
 
 @keyframes birthdayGradientShift {
@@ -2810,10 +2834,14 @@ header p {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 20px;
+  width: 100%;
+  min-width: 0;
 }
 
 .feature-card-shell {
   position: relative;
+  width: 100%;
+  min-width: 0;
   padding-top: 42px;
   will-change: transform;
   animation: cardDrift var(--float-duration, 7.4s) ease-in-out infinite;
@@ -2985,6 +3013,22 @@ header p {
   75% {
     transform: translate3d(calc(var(--float-x, 14px) * 0.4), calc(var(--float-y, 18px) * -0.22), 0)
       rotate(0.25deg);
+  }
+}
+
+@keyframes cardDriftMobile {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate3d(0, calc(var(--float-y, 18px) * -0.22), 0) rotate(0.18deg);
+  }
+  50% {
+    transform: translate3d(0, var(--float-y, 18px), 0) rotate(-0.2deg);
+  }
+  75% {
+    transform: translate3d(0, calc(var(--float-y, 18px) * -0.12), 0) rotate(0.12deg);
   }
 }
 
@@ -3897,7 +3941,7 @@ header p {
 
 @media (max-width: 480px) {
   .bg-settings-panel {
-    top: 10px;
+    top: 76px;
     right: 10px;
     padding: 6px 10px;
     gap: 8px;
@@ -4011,7 +4055,7 @@ header p {
 
   .bg-settings-panel {
     position: fixed !important;
-    top: 12px;
+    top: 68px;
     right: 12px;
     left: auto;
     bottom: auto;
@@ -4083,6 +4127,14 @@ header p {
     padding-inline: 14px;
   }
 
+  .cards-stage,
+  .cards-grid,
+  .feature-card-shell,
+  .feature-card {
+    max-width: 100%;
+    min-width: 0;
+  }
+
   .cards-grid {
     grid-template-columns: 1fr;
     gap: 16px;
@@ -4090,6 +4142,10 @@ header p {
 
   .cards-stage {
     padding-top: 22px;
+  }
+
+  .feature-card-shell {
+    animation-name: cardDriftMobile;
   }
 
   .feature-card {
@@ -4100,14 +4156,15 @@ header p {
   .feature-card-shell--thank-you {
     width: 100%;
     margin-top: 18px;
+    animation-name: cardDriftMobile;
   }
 
   .session-bar {
     width: fit-content;
     left: 10px;
     right: auto;
-    padding: 8px;
-    border-radius: 20px;
+    padding: 5px 9px;
+    border-radius: 16px;
   }
 
   .session-bar__meta {
@@ -4121,7 +4178,8 @@ header p {
   }
 
   .session-bar__button {
-    min-width: 126px;
+    min-width: 108px;
+    padding: 8px 12px;
   }
 
   .admin-shell {
@@ -4358,7 +4416,7 @@ header p {
 
   .bg-settings-panel {
     position: fixed !important;
-    top: 10px;
+    top: 14px;
     right: 10px;
     left: auto;
     bottom: auto;

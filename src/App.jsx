@@ -707,6 +707,17 @@ export default function App() {
     };
   }, [session]);
 
+  useEffect(() => {
+    if (role === 'admin' && activeView !== 'admin') {
+      setActiveView('admin');
+      return;
+    }
+
+    if (role !== 'admin' && activeView === 'admin') {
+      setActiveView('home');
+    }
+  }, [activeView, role]);
+
   const handleSendLink = async () => {
     if (!supabase) {
       setError('Supabase is not configured yet.');

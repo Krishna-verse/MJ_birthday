@@ -63,6 +63,8 @@ const getOwnerKey = (row) => normalizeEmail(row.user_email) || 'guest';
 
 const getOwnerLabel = (row) => row.user_email?.trim() || 'Guest submissions';
 
+const getDownloadName = (item) => item.name || item.path?.split('/').pop() || 'download';
+
 const getRowSearchText = (row) =>
   [
     row.user_email,
@@ -127,33 +129,56 @@ async function fetchSubmissions() {
 }
 
 function SubmissionAsset({ item, signedUrl }) {
+  const downloadName = getDownloadName(item);
+
   if (!signedUrl) {
     return (
       <div className="admin-asset admin-asset--fallback">
         <span className="admin-asset__icon">File</span>
-        <strong>{item.name || 'Attachment'}</strong>
-        <small>Preview unavailable</small>
+        <strong>{downloadName}</strong>
+        <small>No preview</small>
       </div>
     );
   }
 
   if (isPreviewableImage(item.type, item.path)) {
-    return <img className="admin-asset__media" src={signedUrl} alt={item.name || 'Uploaded image'} />;
+    return (
+      <div className="admin-asset admin-asset--media">
+        <img className="admin-asset__media" src={signedUrl} alt={item.name || 'Uploaded image'} />
+        <a className="admin-asset__download" href={signedUrl} download={downloadName}>
+          Download
+        </a>
+      </div>
+    );
   }
 
   if (isPreviewableVideo(item.type, item.path)) {
-    return <video className="admin-asset__media" src={signedUrl} controls playsInline />;
+    return (
+      <div className="admin-asset admin-asset--media">
+        <video className="admin-asset__media" src={signedUrl} controls playsInline />
+        <a className="admin-asset__download" href={signedUrl} download={downloadName}>
+          Download
+        </a>
+      </div>
+    );
   }
 
   if (isPreviewableAudio(item.type, item.path)) {
-    return <audio className="admin-asset__audio" src={signedUrl} controls />;
+    return (
+      <div className="admin-asset admin-asset--media">
+        <audio className="admin-asset__audio" src={signedUrl} controls />
+        <a className="admin-asset__download" href={signedUrl} download={downloadName}>
+          Download
+        </a>
+      </div>
+    );
   }
 
   return (
-    <a className="admin-asset admin-asset--file" href={signedUrl} target="_blank" rel="noreferrer">
+    <a className="admin-asset admin-asset--file" href={signedUrl} download={downloadName}>
       <span className="admin-asset__icon">Open</span>
-      <strong>{item.name || 'Open file'}</strong>
-      <small>{item.kind || item.type || 'File'}</small>
+      <strong>{downloadName}</strong>
+      <small>Download</small>
     </a>
   );
 }
@@ -181,8 +206,6 @@ function buildGroups(rows, query, filterMode) {
         isGuest: key === 'guest',
         items: [],
         lastActivity: 0,
-        textCount: 0,
-        mediaCount: 0,
         fileCount: 0,
       });
     }
@@ -190,8 +213,6 @@ function buildGroups(rows, query, filterMode) {
     const group = groups.get(key);
     group.items.push(row);
     group.lastActivity = Math.max(group.lastActivity, getSubmissionTime(row));
-    group.textCount += row.hasMessage ? 1 : 0;
-    group.mediaCount += row.hasMedia ? 1 : 0;
     group.fileCount += row.attachmentItems.length;
   });
 
@@ -209,20 +230,15 @@ function GroupSubmissionCard({ row, signedUrls }) {
       <div className="admin-submission__header">
         <div>
           <span className="admin-submission__badge">{getSubmissionLabel(row)}</span>
-          <h3>Bundle {row.bundle_id}</h3>
-          <p>{row.created_at ? timeFormatter.format(new Date(row.created_at)) : 'Recently sent'}</p>
-        </div>
-
-        <div className="admin-submission__id">
-          <span>Storage</span>
-          <strong>{row.storage_bucket || STORAGE_BUCKET}</strong>
+          <h3>{row.bundle_id}</h3>
         </div>
       </div>
 
-      <div className="admin-message">
-        <span className="admin-message__label">Message</span>
-        <p>{row.message?.trim() || 'No text note was included with this submission.'}</p>
-      </div>
+      {row.message?.trim() ? (
+        <div className="admin-message">
+          <p>{row.message.trim()}</p>
+        </div>
+      ) : null}
 
       <div className="admin-submission__files">
         {row.attachmentItems.length ? (
@@ -239,8 +255,7 @@ function GroupSubmissionCard({ row, signedUrls }) {
           ))
         ) : (
           <div className="admin-submission__empty">
-            <span>No media files attached</span>
-            <p>This submission contains only text, so there is nothing to preview here.</p>
+            <span>No files</span>
           </div>
         )}
       </div>
@@ -254,7 +269,6 @@ export default function AdminDashboard({ onSignOut, onBackHome, userEmail }) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [signedUrls, setSignedUrls] = useState({});
-  const [lastUpdated, setLastUpdated] = useState('');
   const [query, setQuery] = useState('');
   const [filterMode, setFilterMode] = useState('all');
 
@@ -281,7 +295,6 @@ export default function AdminDashboard({ onSignOut, onBackHome, userEmail }) {
         }
 
         setSubmissions(rows);
-        setLastUpdated(new Date().toLocaleString());
         setSignedUrls(await buildSignedUrlMap(rows));
       } catch (fetchError) {
         if (!mounted) {
@@ -314,20 +327,17 @@ export default function AdminDashboard({ onSignOut, onBackHome, userEmail }) {
 
   const stats = useMemo(() => {
     const total = submissions.length;
-    const withMessage = submissions.filter((item) => item.hasMessage).length;
     const withMedia = submissions.filter((item) => item.hasMedia).length;
     const files = submissions.reduce((count, item) => count + item.attachmentItems.length, 0);
     const senders = new Set(submissions.map((item) => getOwnerKey(item))).size;
 
     return [
-      { label: 'Senders', value: senders, note: 'Unique email groups' },
-      { label: 'Submissions', value: total, note: 'All thank-you entries' },
-      { label: 'With text', value: withMessage, note: 'Written notes' },
-      { label: 'Files stored', value: files, note: 'Items inside storage' },
-      { label: 'With media', value: withMedia, note: 'Voice, photo, or video' },
-      { label: 'Groups visible', value: visibleGroups.length, note: 'Matches current filters' },
+      { label: 'Submissions', value: total },
+      { label: 'Senders', value: senders },
+      { label: 'Media', value: withMedia },
+      { label: 'Files', value: files },
     ];
-  }, [submissions, visibleGroups.length]);
+  }, [submissions]);
 
   const filterTabs = [
     { id: 'all', label: `All (${submissions.length})` },
@@ -352,7 +362,6 @@ export default function AdminDashboard({ onSignOut, onBackHome, userEmail }) {
     try {
       const rows = (await fetchSubmissions()).map(buildSubmission);
       setSubmissions(rows);
-      setLastUpdated(new Date().toLocaleString());
       setSignedUrls(await buildSignedUrlMap(rows));
     } catch (fetchError) {
       setError(fetchError?.message || 'Could not refresh the inbox.');
@@ -371,7 +380,6 @@ export default function AdminDashboard({ onSignOut, onBackHome, userEmail }) {
         <div>
           <div className="admin-topbar__badge">Admin inbox</div>
           <h1>Thank-you submissions</h1>
-          <p>Everything uploaded from the thank-you studio appears here, grouped by sender so each user stays separate.</p>
         </div>
 
         <div className="admin-topbar__actions">
@@ -392,20 +400,13 @@ export default function AdminDashboard({ onSignOut, onBackHome, userEmail }) {
       <section className="admin-hero">
         <div className="admin-hero__copy">
           <span className="admin-hero__eyebrow">Logged in as {userEmail || 'admin'}</span>
-          <h2>Review every note, voice memo, photo, and clip by sender.</h2>
-          <p>
-            This dashboard keeps the inbox calm: recent users first, each sender in their own lane, and every bundle
-            still easy to open when you need the details.
-          </p>
-
           <div className="admin-hero__controls">
             <label className="admin-search">
-              <span>Search</span>
               <input
                 type="search"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search email, bundle, note, or file"
+                placeholder="Search submissions"
               />
             </label>
 
@@ -427,9 +428,6 @@ export default function AdminDashboard({ onSignOut, onBackHome, userEmail }) {
             <span className="admin-hero__pill">
               {loading ? 'Loading inbox...' : `${visibleCount} visible / ${submissions.length} total`}
             </span>
-            <span className="admin-hero__pill admin-hero__pill--accent">
-              {lastUpdated ? `Updated ${lastUpdated}` : 'Waiting for the first refresh'}
-            </span>
           </div>
         </div>
 
@@ -438,7 +436,6 @@ export default function AdminDashboard({ onSignOut, onBackHome, userEmail }) {
             <div className="admin-stat" key={stat.label}>
               <strong>{stat.value}</strong>
               <span>{stat.label}</span>
-              <small>{stat.note}</small>
             </div>
           ))}
         </div>
@@ -450,8 +447,7 @@ export default function AdminDashboard({ onSignOut, onBackHome, userEmail }) {
         {loading ? (
           <div className="admin-empty admin-empty--loading">
             <div className="admin-empty__orb" />
-            <h3>Loading the inbox</h3>
-            <p>Gathering the latest thank-you submissions and file previews.</p>
+            <h3>Loading inbox</h3>
           </div>
         ) : visibleGroups.length ? (
           <div className="admin-user-groups">
@@ -461,18 +457,13 @@ export default function AdminDashboard({ onSignOut, onBackHome, userEmail }) {
                   <div className="admin-user-group__heading">
                     <span className="admin-user-group__badge">{group.isGuest ? 'Guest lane' : 'User lane'}</span>
                     <h3>{group.label}</h3>
-                    <p>
-                      {group.items.length} submission{group.items.length === 1 ? '' : 's'}
-                      {' | '}
-                      {group.fileCount} file{group.fileCount === 1 ? '' : 's'} attached
-                    </p>
                   </div>
 
                   <div className="admin-user-group__meta">
-                    <span className="admin-user-group__pill">{group.textCount} text note{group.textCount === 1 ? '' : 's'}</span>
-                    <span className="admin-user-group__pill">{group.mediaCount} media post{group.mediaCount === 1 ? '' : 's'}</span>
+                    <span className="admin-user-group__pill">{group.items.length} submissions</span>
+                    <span className="admin-user-group__pill">{group.fileCount} files</span>
                     <span className="admin-user-group__pill admin-user-group__pill--accent">
-                      {group.lastActivity ? `Last sent ${timeFormatter.format(new Date(group.lastActivity))}` : 'Recent activity'}
+                      {group.lastActivity ? timeFormatter.format(new Date(group.lastActivity)) : 'Recent'}
                     </span>
                   </div>
                 </div>
@@ -492,27 +483,18 @@ export default function AdminDashboard({ onSignOut, onBackHome, userEmail }) {
         ) : (
           <div className="admin-empty">
             <div className="admin-empty__orb" />
-            <h3>{query || filterMode !== 'all' ? 'No matches found' : 'No submissions yet'}</h3>
-            <p>
-              {query || filterMode !== 'all'
-                ? 'Try clearing the search or changing the filter to bring results back.'
-                : 'Once someone sends a thank-you note, the content will appear here automatically.'}
-            </p>
+            <h3>{query || filterMode !== 'all' ? 'No matches' : 'No submissions yet'}</h3>
           </div>
         )}
       </section>
 
       <footer className="admin-dock">
-        <div className="admin-dock__copy">
-          <strong>Live review mode</strong>
-          <span>Use refresh to pull the latest uploads. New items appear at the top.</span>
-        </div>
         <div className="admin-dock__actions">
           <button className="admin-dock__button" type="button" onClick={refreshInbox} disabled={refreshing || loading}>
             {refreshing ? 'Refreshing...' : 'Refresh'}
           </button>
           <button className="admin-dock__button admin-dock__button--ghost" type="button" onClick={onSignOut}>
-            Back out
+            Sign out
           </button>
         </div>
       </footer>
