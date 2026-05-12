@@ -2415,25 +2415,32 @@ header p {
   left: 50%;
   bottom: 18px;
   transform: translateX(-50%);
-  width: min(calc(100vw - 24px), 920px);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  width: fit-content;
+  max-width: min(calc(100vw - 24px), 360px);
+  display: grid;
+  justify-items: center;
+  gap: 10px;
   z-index: 10035;
-  padding: 16px 18px;
-  border-radius: 26px;
+  padding: 10px 12px;
+  border-radius: 22px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(8, 8, 8, 0.72);
-  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.42);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.34);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
 
-.admin-block-dock__copy {
-  display: grid;
-  gap: 4px;
-  text-align: left;
+.admin-block-dock__summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
 .admin-block-dock__label {
@@ -2450,20 +2457,16 @@ header p {
   text-transform: uppercase;
 }
 
-.admin-block-dock__copy strong {
-  color: #fff;
-  font-size: 1rem;
-}
-
-.admin-block-dock__copy p {
-  color: rgba(255, 255, 255, 0.68);
-  line-height: 1.6;
+.admin-block-dock__summary-hint {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.76rem;
+  font-weight: 700;
 }
 
 .admin-block-dock__button {
   border: none;
   border-radius: 999px;
-  padding: 12px 18px;
+  padding: 11px 16px;
   background: linear-gradient(135deg, #ffffff, rgba(255, 255, 255, 0.82));
   color: #0b0b0b;
   font-weight: 900;

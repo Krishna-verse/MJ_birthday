@@ -214,6 +214,7 @@ function BirthdayExperience({
   const [cardsVisible, setCardsVisible] = useState(false);
   const [thankYouOpen, setThankYouOpen] = useState(false);
   const [notInterestedShift, setNotInterestedShift] = useState({ x: 0, y: 0 });
+  const [adminDockOpen, setAdminDockOpen] = useState(false);
   const [clockNow, setClockNow] = useState(() => Date.now());
   const cardsTimer = useRef(null);
   const cleanupRef = useRef(null);
@@ -281,20 +282,13 @@ function BirthdayExperience({
       <div id="heartFloatLayer" aria-hidden="true" />
 
       <div className="session-bar">
-        <div className="session-bar__meta">
-          <span className="session-bar__label">Signed in</span>
-          <span className="session-bar__email">{userEmail || 'Saved session'}</span>
-        </div>
+        {!isAdmin ? (
+          <div className="session-bar__meta">
+            <span className="session-bar__label">Signed in</span>
+            <span className="session-bar__email">{userEmail || 'Saved session'}</span>
+          </div>
+        ) : null}
         <div className="session-bar__actions">
-          {isAdmin ? (
-            <button
-              className="session-bar__button session-bar__button--ghost"
-              type="button"
-              onClick={onOpenAdminPage}
-            >
-              View thank you responses
-            </button>
-          ) : null}
           <button className="session-bar__button" type="button" onClick={onSignOut}>
             Sign out
           </button>
@@ -580,14 +574,21 @@ function BirthdayExperience({
 
       {isAdmin ? (
         <div className="admin-block-dock">
-          <div className="admin-block-dock__copy">
-            <span className="admin-block-dock__label">Admin email detected</span>
-            <strong>Open the thank-you responses page from here anytime.</strong>
-            <p>You are signed in with the admin account, so the response review page is unlocked for this session.</p>
-          </div>
-          <button className="admin-block-dock__button" type="button" onClick={onOpenAdminPage}>
-            View thank you responses
-          </button>
+          {!adminDockOpen ? (
+            <button
+              className="admin-block-dock__summary"
+              type="button"
+              onClick={() => setAdminDockOpen(true)}
+              aria-expanded={adminDockOpen}
+            >
+              <span className="admin-block-dock__label">Admin email detected</span>
+              <span className="admin-block-dock__summary-hint">Tap to open</span>
+            </button>
+          ) : (
+            <button className="admin-block-dock__button" type="button" onClick={onOpenAdminPage}>
+              View thank you responses
+            </button>
+          )}
         </div>
       ) : null}
 
