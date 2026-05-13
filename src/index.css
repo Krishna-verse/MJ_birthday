@@ -1453,7 +1453,7 @@ select,
   display: none;
   flex-direction: column;
   width: 100%;
-  min-height: 100vh;
+  min-height: 0;
   flex: 1;
   padding-top: 56px;
   position: relative;
@@ -2340,17 +2340,20 @@ header p {
 /* FOOTER */
 .site-footer {
   align-self: stretch;
-  width: 100vw;
-  max-width: 100vw;
-  margin-top: auto;
-  margin-left: calc(50% - 50vw);
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: none;
+  margin: 0;
   text-align: center;
   padding: 24px 20px;
   border-top: 1px solid rgba(255,255,255,0.08);
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  margin-bottom: 0;
+  z-index: 25;
   font-family: 'Arial Narrow 7', 'Matcha Cih', 'Segoe UI', sans-serif;
 }
 
@@ -2380,7 +2383,7 @@ header p {
 .app-shell {
   position: relative;
   width: 100%;
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   z-index: 1;
@@ -2392,7 +2395,7 @@ header p {
   width: 100%;
   max-width: none;
   margin: 0 auto;
-  padding: clamp(22px, 4vw, 42px) 0 clamp(44px, 6vw, 96px);
+  padding: clamp(22px, 4vw, 42px) 0 clamp(104px, 8vw, 144px);
   display: flex;
   flex-direction: column;
   gap: var(--home-stack-gap);
@@ -3678,9 +3681,13 @@ header p {
 
 .site-footer {
   align-self: stretch;
-  width: 100vw;
-  max-width: 100vw;
-  margin: auto 0 0;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: none;
+  margin: 0;
   padding: 22px 20px;
   border-radius: 0;
   border-top: 1px solid rgba(255, 255, 255, 0.12);
@@ -3689,8 +3696,7 @@ header p {
   text-align: center;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  margin-bottom: 0;
-  margin-left: calc(50% - 50vw);
+  z-index: 25;
   font-family: 'Arial Narrow 7', 'Matcha Cih', 'Segoe UI', sans-serif;
 }
 
@@ -4595,7 +4601,7 @@ header p {
 @media (max-width: 480px) {
   .home-shell {
     padding-inline: 10px;
-    padding-bottom: 60px;
+    padding-bottom: 96px;
   }
 
   .birthday-hero__stage {

@@ -99,31 +99,43 @@ function stopIntroMusicAfterIntroText() {
 /* =========================
    PARTICLES
 ========================= */
+const isCompactViewport = typeof window !== "undefined" && window.matchMedia("(max-width: 480px)").matches;
+const isTouchDevice =
+  typeof window !== "undefined" &&
+  (navigator.maxTouchPoints > 0 || "ontouchstart" in window);
+
 tsParticles.load("particles-bg", {
   particles: {
-    number: { value: 80, density: { enable: true, area: 800 } },
+    number: { value: isCompactViewport ? 18 : 80, density: { enable: true, area: isCompactViewport ? 1200 : 800 } },
     color: { value: "#d9d9d9" },
-    links: { enable: true, color: "#d9d9d9", distance: 150 },
-    move: { enable: true, speed: 1 },
-    size: { value: { min: 1, max: 4 } },
-    opacity: { value: 0.6 }
+    links: { enable: true, color: "#d9d9d9", distance: isCompactViewport ? 120 : 150 },
+    move: { enable: true, speed: isCompactViewport ? 0.6 : 1 },
+    size: { value: { min: 1, max: isCompactViewport ? 3 : 4 } },
+    opacity: { value: isCompactViewport ? 0.45 : 0.6 }
   },
-  interactivity: {
-    events: {
-      onHover: { enable: true, mode: "repulse" },
-      onClick: { enable: true, mode: "push" }
-    },
-    modes: {
-      repulse: { distance: 120 },
-      push: { quantity: 4 }
-    }
-  },
+  interactivity: isTouchDevice
+    ? {
+        events: {
+          onHover: { enable: false },
+          onClick: { enable: false }
+        }
+      }
+    : {
+        events: {
+          onHover: { enable: true, mode: "repulse" },
+          onClick: { enable: false }
+        },
+        modes: {
+          repulse: { distance: 120 }
+        }
+      },
   responsive: [
     {
       maxWidth: 768,
       options: {
         particles: {
-          number: { value: 40 }
+          number: { value: 30 },
+          links: { distance: 130 }
         }
       }
     },
@@ -131,7 +143,10 @@ tsParticles.load("particles-bg", {
       maxWidth: 480,
       options: {
         particles: {
-          number: { value: 25 }
+          number: { value: 18 },
+          links: { distance: 120 },
+          move: { speed: 0.6 },
+          opacity: { value: 0.45 }
         }
       }
     }

@@ -994,6 +994,13 @@ export default function App() {
   };
 
   const handleSignOut = async () => {
+    if (typeof window !== 'undefined') {
+      const shouldSignOut = window.confirm('Are you sure you want to sign out?');
+      if (!shouldSignOut) {
+        return;
+      }
+    }
+
     if (supabase) {
       await supabase.auth.signOut();
     }
