@@ -5625,7 +5625,7 @@ header p {
     left: 12px;
     width: auto;
     bottom: 74px;
-    height: min(74dvh, calc(100dvh - 92px));
+    height: auto;
     max-height: calc(100dvh - 92px);
   }
 
@@ -5639,7 +5639,8 @@ header p {
   }
 
   #chatBody {
-    max-height: 220px;
+    flex: 0 1 auto;
+    max-height: min(42dvh, 320px);
   }
 
   .chat-msg-row {
