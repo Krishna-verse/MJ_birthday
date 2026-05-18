@@ -506,7 +506,13 @@ function BirthdayExperience({
   const [clockNow, setClockNow] = useState(() => Date.now());
   const cardsTimer = useRef(null);
   const cleanupRef = useRef(null);
+  const thankYouRevealRef = useRef(null);
+  const [thankYouFabVisible, setThankYouFabVisible] = useState(false);
   const isCosmicTheme = theme === COSMIC_THEME;
+
+  const openThankYouStudio = () => {
+    setThankYouOpen(true);
+  };
 
   const moveNotInterestedButton = (event) => {
     const touchPoint = event.touches?.[0] || event.changedTouches?.[0];
@@ -562,6 +568,29 @@ function BirthdayExperience({
     }, 1000);
 
     return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const target = thankYouRevealRef.current;
+    if (!target || typeof IntersectionObserver === 'undefined') {
+      setThankYouFabVisible(true);
+      return () => {};
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setThankYouFabVisible(entry.isIntersecting);
+      },
+      {
+        root: null,
+        threshold: 0.08,
+        rootMargin: '0px 0px -10% 0px',
+      }
+    );
+
+    observer.observe(target);
+
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -770,7 +799,7 @@ function BirthdayExperience({
                   return;
                 }
 
-                setThankYouOpen(true);
+                openThankYouStudio();
               }}
               role="button"
               tabIndex={0}
@@ -782,7 +811,7 @@ function BirthdayExperience({
                     return;
                   }
 
-                  setThankYouOpen(true);
+                  openThankYouStudio();
                 }
               }}
             >
@@ -825,8 +854,8 @@ function BirthdayExperience({
                     <div className="timeline-card__glow" />
                   </article>
                 </li>
-              ))}
-            </ol>
+            ))}
+          </ol>
           </div>
         </section>
         <section className={`birthday-finale ${cardsVisible ? 'is-visible' : ''}`} aria-label="Birthday finale">
@@ -859,6 +888,21 @@ function BirthdayExperience({
             <p>Wishing you all the magic this world holds ✨</p>
           </div>
         </section>
+        <button
+          type="button"
+          className={`thank-you-fab ${thankYouFabVisible ? 'is-visible' : ''} ${thankYouOpen ? 'is-hidden' : ''}`}
+          onClick={openThankYouStudio}
+          aria-label="Open the thank you popup"
+        >
+          <span className="thank-you-fab__icon" aria-hidden="true">
+            💌
+          </span>
+          <span className="thank-you-fab__copy">
+            <strong>Say thank you</strong>
+            <small>Open the note studio</small>
+          </span>
+        </button>
+        <div ref={thankYouRevealRef} className="thank-you-fab-sentinel" aria-hidden="true" />
       </main>
 
       <div id="bgSettings" className="bg-settings-panel">
@@ -929,8 +973,11 @@ function BirthdayExperience({
         <div id="aboutPopup" className="popup-box about-popup">
           <span className="popup-close" onClick={() => window.closeAbout?.()}>&times;</span>
 
-          <div className="about-image-wrap" id="aboutImageWrap">
-            <img src="/harshi_img.jpeg" alt="About You Picture" className="about-img" />
+          <div
+            className="about-image-wrap"
+            id="aboutImageWrap"
+            style={{ backgroundImage: "url('/sam_pic.jpeg')" }}
+          >
             <div className="about-image-overlay" />
           </div>
 
