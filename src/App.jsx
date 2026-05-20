@@ -3,6 +3,7 @@ import { supabase } from './lib/supabase';
 import { initBirthdaySite } from './site';
 import AdminDashboard from './AdminDashboard';
 import ThankYouStudio from './ThankYouStudio';
+import IntroBirthdayCake from './IntroBirthdayCake';
 
 if (typeof window !== 'undefined') {
   window.__reactChatWidgetEnabled = true;
@@ -14,8 +15,26 @@ const authRedirectUrlFromEnv = import.meta.env.VITE_AUTH_REDIRECT_URL?.trim() ||
 const AUTH_COOLDOWN_MS = 60 * 1000;
 const LAST_SIGNED_IN_EMAIL_KEY = 'harshi-7-last-signed-in-email';
 const THEME_STORAGE_KEY = 'harshi-7-theme';
-const COSMIC_THEME = 'cosmic';
 const CLASSIC_THEME = 'classic';
+
+const lockBodyScroll = () => {
+  if (typeof document === 'undefined') return;
+  document.body.classList.add('is-scroll-locked');
+};
+
+const unlockBodyScroll = () => {
+  if (typeof document === 'undefined') return;
+  const hasOpenLegacyPopup = Array.from(document.querySelectorAll('.popup-box')).some(
+    (popup) => popup.style.display === 'block'
+  );
+  const hasOpenReactPopup = document.querySelector(
+    '#chatbot.is-open, .thank-you-modal.is-open, .sign-out-modal'
+  );
+
+  if (!hasOpenLegacyPopup && !hasOpenReactPopup) {
+    document.body.classList.remove('is-scroll-locked');
+  }
+};
 
 const getAuthRedirectUrl = () => {
   if (typeof window === 'undefined') {
@@ -73,37 +92,6 @@ const cards = [
   { id: 'rizzCard', title: 'Rizz for You', text: 'Smooth lines only', icon: '\u{1F60F}' }
 ];
 
-const birthdayTimeline = [
-  {
-    step: '01',
-    date: 'The first spark',
-    title: 'Everything started feeling a little more special',
-    text: 'That tiny moment when the birthday story stopped being ordinary and started feeling like a memory worth keeping.',
-    icon: '\u2728'
-  },
-  {
-    step: '02',
-    date: 'The vibe check',
-    title: 'Laughs, chaos, and random little moments',
-    text: 'Inside jokes, late replies, and the kind of energy that turns normal days into highlights.',
-    icon: '\u{1F9E1}'
-  },
-  {
-    step: '03',
-    date: 'The memory vault',
-    title: 'The soft moments we keep coming back to',
-    text: 'A tiny archive of the best bits: the calm ones, the funny ones, and the ones that stick forever.',
-    icon: '\u{1F4DA}'
-  },
-  {
-    step: '04',
-    date: 'This birthday',
-    title: 'More joy, more wins, more good days',
-    text: 'A fresh year, a brighter mood, and a wish that the best chapters are still ahead.',
-    icon: '\u{1F389}'
-  }
-];
-
 const flowerAsset = '/mj_pic2.png';
 const heroBackgroundVideo = '/bg_video.mp4';
 const birthdayMonthIndex = 3;
@@ -125,17 +113,6 @@ const cardFloatStyles = [
   { x: '-15px', y: '19px', duration: '6.5s', delay: '0.5s' },
   { x: '12px', y: '15px', duration: '6.1s', delay: '0.12s' },
   { x: '-14px', y: '18px', duration: '6.7s', delay: '0.42s' }
-];
-
-const cosmicEmojiFloats = [
-  { emoji: '🎂', top: '54%', left: '10%', size: '1.35rem', duration: '7.8s', delay: '0s' },
-  { emoji: '✨', top: '22%', left: '22%', size: '1.05rem', duration: '6.5s', delay: '0.3s' },
-  { emoji: '🎉', top: '68%', left: '31%', size: '1.25rem', duration: '7.2s', delay: '0.55s' },
-  { emoji: '💫', top: '28%', left: '78%', size: '1.2rem', duration: '6.9s', delay: '0.2s' },
-  { emoji: '🌟', top: '58%', left: '86%', size: '1.15rem', duration: '8s', delay: '0.75s' },
-  { emoji: '🪐', top: '40%', left: '69%', size: '1.1rem', duration: '7.4s', delay: '0.45s' },
-  { emoji: '🎈', top: '16%', left: '58%', size: '1rem', duration: '6.8s', delay: '0.15s' },
-  { emoji: '💙', top: '76%', left: '57%', size: '1.05rem', duration: '7.6s', delay: '0.6s' }
 ];
 
 const birthdayFinaleSparkles = [
@@ -302,11 +279,15 @@ function ChatWidget() {
 
   useEffect(() => {
     if (!open) {
+      unlockBodyScroll();
       return () => {};
     }
 
+    lockBodyScroll();
     messagesEndRef.current?.scrollIntoView({ block: 'end' });
-    return () => {};
+    return () => {
+      unlockBodyScroll();
+    };
   }, [open, messages, isTyping]);
 
   useEffect(() => {
@@ -394,13 +375,14 @@ function ChatWidget() {
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="quick-btns" aria-label="Suggested questions">
-            {chatQuickActions.map((action) => (
-              <button key={action.query} type="button" onClick={() => sendMessage(action.query)}>
-                {action.label}
-              </button>
-            ))}
-          </div>
+        </div>
+
+        <div className="quick-btns" aria-label="Suggested questions">
+          {chatQuickActions.map((action) => (
+            <button key={action.query} type="button" onClick={() => sendMessage(action.query)}>
+              {action.label}
+            </button>
+          ))}
         </div>
 
         <form
@@ -495,8 +477,6 @@ function BirthdayExperience({
   userEmail,
   isAdmin,
   sessionMessage,
-  theme,
-  onToggleTheme,
 }) {
   const [heroReady, setHeroReady] = useState(false);
   const [cardsVisible, setCardsVisible] = useState(false);
@@ -504,15 +484,27 @@ function BirthdayExperience({
   const [notInterestedShift, setNotInterestedShift] = useState({ x: 0, y: 0 });
   const [adminDockOpen, setAdminDockOpen] = useState(false);
   const [clockNow, setClockNow] = useState(() => Date.now());
+  const [introCakeKey, setIntroCakeKey] = useState(0);
   const cardsTimer = useRef(null);
   const cleanupRef = useRef(null);
   const thankYouRevealRef = useRef(null);
   const [thankYouFabVisible, setThankYouFabVisible] = useState(false);
-  const isCosmicTheme = theme === COSMIC_THEME;
 
   const openThankYouStudio = () => {
     setThankYouOpen(true);
   };
+
+  useEffect(() => {
+    if (thankYouOpen) {
+      lockBodyScroll();
+    } else {
+      unlockBodyScroll();
+    }
+
+    return () => {
+      unlockBodyScroll();
+    };
+  }, [thankYouOpen]);
 
   const moveNotInterestedButton = (event) => {
     const touchPoint = event.touches?.[0] || event.changedTouches?.[0];
@@ -548,10 +540,16 @@ function BirthdayExperience({
       }, 900);
     };
 
+    const handleIntroStart = () => {
+      setIntroCakeKey((key) => key + 1);
+    };
+
+    window.addEventListener('birthday:intro-start', handleIntroStart);
     window.addEventListener('birthday:home-visible', handleHomeVisible);
 
     return () => {
       window.clearTimeout(readyTimer);
+      window.removeEventListener('birthday:intro-start', handleIntroStart);
       window.removeEventListener('birthday:home-visible', handleHomeVisible);
       if (cardsTimer.current) {
         clearTimeout(cardsTimer.current);
@@ -626,17 +624,6 @@ function BirthdayExperience({
       <ChatWidget />
 
       <div className="session-bar">
-        <div className="session-bar__actions">
-          <button
-            className="session-bar__button session-bar__button--theme"
-            type="button"
-            onClick={onToggleTheme}
-            aria-pressed={theme === COSMIC_THEME}
-            aria-label={`Switch to ${theme === COSMIC_THEME ? 'classic' : 'cosmic'} theme`}
-          >
-            {theme === COSMIC_THEME ? 'Classic' : 'Cosmic'}
-          </button>
-        </div>
         {!isAdmin ? (
           <div className="session-bar__meta">
             <span className="session-bar__label">Signed in</span>
@@ -659,31 +646,6 @@ function BirthdayExperience({
           >
             <source src={heroBackgroundVideo} />
           </video>
-          {isCosmicTheme ? (
-            <div className="birthday-hero__cosmic-layer" aria-hidden="true">
-              <span className="birthday-hero__orbit birthday-hero__orbit--one" />
-              <span className="birthday-hero__orbit birthday-hero__orbit--two" />
-              <div className="birthday-hero__planet">
-                <span className="birthday-hero__planet-glow" />
-                <span className="birthday-hero__planet-core" />
-              </div>
-              {cosmicEmojiFloats.map((item) => (
-                <span
-                  key={`${item.emoji}-${item.left}-${item.top}`}
-                  className="birthday-hero__cosmic-emoji"
-                  style={{
-                    top: item.top,
-                    left: item.left,
-                    fontSize: item.size,
-                    animationDuration: item.duration,
-                    animationDelay: item.delay,
-                  }}
-                >
-                  {item.emoji}
-                </span>
-              ))}
-            </div>
-          ) : null}
           <div className="birthday-hero__content">
             <BirthdayCountdown now={clockNow} />
             <div className="birthday-hero__title-row">
@@ -736,12 +698,18 @@ function BirthdayExperience({
       </div>
 
       <div id="intro" className="center">
+        <div className="intro-stage" aria-hidden="true">
+          <span className="intro-stage__light intro-stage__light--one" />
+          <span className="intro-stage__light intro-stage__light--two" />
+          <span className="intro-stage__light intro-stage__light--three" />
+        </div>
+        <IntroBirthdayCake key={introCakeKey} />
         <h1 className="intro-text">
-          <span>AND THEN...</span>
-          <span>THE MAIN CHARACTER</span>
-          <span>WAS BORN 🎬</span>
+          <span>FOR THE GIRL</span>
+          <span>WHO OWNS MY HEART</span>
           <span>7TH APRIL 2008</span>
-          <span>#DEVIL</span>
+          <span>#SUBMISSIVE BADDIE</span>
+          <span>#KNIGHT</span>
         </h1>
       </div>
 
@@ -781,82 +749,37 @@ function BirthdayExperience({
               </div>
             ))}
           </div>
-          <div
-            className={`feature-card-shell feature-card-shell--thank-you ${cardsVisible ? 'is-visible' : ''}`}
-            style={{
-              '--float-x': '18px',
-              '--float-y': '24px',
-              '--float-duration': '6.4s',
-              '--float-delay': '0.2s'
-            }}
-          >
-            <article
-              className="feature-card feature-card--thank-you"
-              id="thankYouCard"
-              onClick={() => {
-                if (isAdmin) {
-                  onOpenAdminPage();
-                  return;
-                }
-
-                openThankYouStudio();
-              }}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  if (isAdmin) {
-                    onOpenAdminPage();
-                    return;
-                  }
-
-                  openThankYouStudio();
-                }
+          {!isAdmin ? (
+            <div
+              className={`feature-card-shell feature-card-shell--thank-you ${cardsVisible ? 'is-visible' : ''}`}
+              style={{
+                '--float-x': '18px',
+                '--float-y': '24px',
+                '--float-duration': '6.4s',
+                '--float-delay': '0.2s'
               }}
             >
-              <div className="feature-card__icon">💌</div>
-              <h2>Thank You</h2>
-              <p>{isAdmin ? 'Review every thank-you submission from the admin inbox' : 'Leave a note, voice, photo, or video'}</p>
-              <span className="feature-card__badge">{isAdmin ? 'Open responses' : 'Open the studio'}</span>
-              <div className="feature-card__shine" />
-            </article>
-          </div>
-        </section>
-        <section className={`timeline-stage ${cardsVisible ? 'is-visible' : ''}`} aria-labelledby="timelineTitle">
-          <div className="timeline-stage__panel">
-            <div className="timeline-stage__copy">
-              <span className="timeline-stage__eyebrow">Mini timeline</span>
-              <div className="timeline-stage__title-row">
-                <h3 id="timelineTitle">A small story of the moments that matter</h3>
-              </div>
+              <article
+                className="feature-card feature-card--thank-you"
+                id="thankYouCard"
+                onClick={openThankYouStudio}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openThankYouStudio();
+                  }
+                }}
+              >
+                <div className="feature-card__icon">💌</div>
+                <h2>Thank You</h2>
+                <p>Leave a note, voice, photo, or video</p>
+                <span className="feature-card__badge">Open the studio</span>
+                <div className="feature-card__shine" />
+              </article>
             </div>
-
-            <div className="timeline-rail" aria-hidden="true">
-              <span />
-            </div>
-
-            <ol className="timeline-grid">
-              {birthdayTimeline.map((item, index) => (
-                <li
-                  className="timeline-item"
-                  key={item.step}
-                  style={{ '--timeline-delay': `${index * 130}ms` }}
-                >
-                  <article className="timeline-card">
-                    <span className="timeline-card__step">{item.step}</span>
-                    <div className="timeline-card__icon" aria-hidden="true">
-                      {item.icon}
-                    </div>
-                    <div className="timeline-card__date">{item.date}</div>
-                    <h4>{item.title}</h4>
-                    <p>{item.text}</p>
-                    <div className="timeline-card__glow" />
-                  </article>
-                </li>
-            ))}
-          </ol>
-          </div>
+          ) : null}
         </section>
         <section className={`birthday-finale ${cardsVisible ? 'is-visible' : ''}`} aria-label="Birthday finale">
           <div className="birthday-finale__sparkles" aria-hidden="true">
@@ -904,14 +827,6 @@ function BirthdayExperience({
         </button>
         <div ref={thankYouRevealRef} className="thank-you-fab-sentinel" aria-hidden="true" />
       </main>
-
-      <div id="bgSettings" className="bg-settings-panel">
-        <a href="javascript:void(0)" id="bgToggleLink">
-          ⏸ Pause
-        </a>
-        <span className="volume-label">Volume:</span>
-        <input id="bgVolumeSlider" type="range" min="0" max="1" step="0.05" defaultValue="0.3" />
-      </div>
 
       <div id="popupLayer" className="popup-layer" aria-hidden="true">
         <div id="partyPopup" className="popup-box wide-popup">
@@ -1056,9 +971,11 @@ function BirthdayExperience({
 function SignOutConfirmModal({ open, busy, onCancel, onConfirm }) {
   useEffect(() => {
     if (!open) {
+      unlockBodyScroll();
       return () => {};
     }
 
+    lockBodyScroll();
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
         onCancel();
@@ -1069,6 +986,7 @@ function SignOutConfirmModal({ open, busy, onCancel, onConfirm }) {
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
+      unlockBodyScroll();
     };
   }, [open, onCancel]);
 
@@ -1115,13 +1033,12 @@ export default function App() {
   const [roleLoading, setRoleLoading] = useState(false);
   const [role, setRole] = useState(null);
   const [activeView, setActiveView] = useState('home');
-  const [theme, setTheme] = useState(() => {
+  const [theme] = useState(() => {
     if (typeof window === 'undefined') {
-      return COSMIC_THEME;
+      return CLASSIC_THEME;
     }
 
-    const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
-    return storedTheme === CLASSIC_THEME ? CLASSIC_THEME : COSMIC_THEME;
+    return CLASSIC_THEME;
   });
   const [sendingLink, setSendingLink] = useState(false);
   const [email, setEmail] = useState(() => {
@@ -1407,12 +1324,6 @@ export default function App() {
     setActiveView('admin');
   };
 
-  const toggleTheme = () => {
-    setTheme((currentTheme) => (
-      currentTheme === COSMIC_THEME ? CLASSIC_THEME : COSMIC_THEME
-    ));
-  };
-
   if (authLoading) {
     return (
       <div className="auth-shell">
@@ -1489,8 +1400,6 @@ export default function App() {
         userEmail={session.user?.email}
         isAdmin={role === 'admin'}
         sessionMessage={sessionMessage}
-        theme={theme}
-        onToggleTheme={toggleTheme}
       />
       <SignOutConfirmModal
         open={signOutConfirmOpen}

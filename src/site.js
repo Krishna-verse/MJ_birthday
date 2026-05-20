@@ -30,9 +30,6 @@ const wishPopup = document.getElementById("wishPopup");
 const bgLoop = new Audio("/2.mp3");
 bgLoop.loop = true;
 bgLoop.volume = 0.6;
-const bgSettings = document.getElementById("bgSettings");
-const bgToggleLink = document.getElementById("bgToggleLink");
-const bgVolumeSlider = document.getElementById("bgVolumeSlider");
 
 const partyPopup = document.getElementById("partyPopup");
 const sharePopup = document.getElementById("sharePopup");
@@ -47,6 +44,8 @@ let confettiRainIntervalId;
 let heartRainIntervalId;
 let cardHeartIntervalId;
 let introMusicStopTimer;
+let introCandleTimer;
+let introCutTimer;
 const cardHeartLayer = document.getElementById("heartFloatLayer");
 
 
@@ -321,7 +320,22 @@ startBtn.onclick = function () {
   startScreen.style.pointerEvents = "none";
 
   if (intro) {
+    intro.classList.remove("intro-candle-on");
+    intro.classList.remove("is-cake-cutting");
+    if (introCandleTimer) {
+      clearTimeout(introCandleTimer);
+    }
+    if (introCutTimer) {
+      clearTimeout(introCutTimer);
+    }
+    window.dispatchEvent(new CustomEvent("birthday:intro-start"));
     intro.style.display = "flex";
+    introCandleTimer = setTimeout(() => {
+      intro?.classList.add("intro-candle-on");
+    }, 7000);
+    introCutTimer = setTimeout(() => {
+      intro?.classList.add("is-cake-cutting");
+    }, 3600);
   }
 
   if (!introMusicEnded) {
@@ -333,14 +347,23 @@ startBtn.onclick = function () {
   setTimeout(() => {
     startScreen.style.display = "none";
     if (intro) {
+      intro.classList.remove("intro-candle-on");
+      intro.classList.remove("is-cake-cutting");
       intro.style.display = "none";
+    }
+    if (introCandleTimer) {
+      clearTimeout(introCandleTimer);
+      introCandleTimer = undefined;
+    }
+    if (introCutTimer) {
+      clearTimeout(introCutTimer);
+      introCutTimer = undefined;
     }
     mainContent.style.display = "flex";
     window.dispatchEvent(new CustomEvent("birthday:home-visible"));
-    bgSettings.style.display = "flex";
     bgLoop.play().catch(() => {});
     sideConfetti();
-  }, 6000);
+  }, 10500);
 };
 
 const handleHomeVisible = () => {
@@ -356,6 +379,7 @@ function openPopup(popup) {
   overlay.classList.add("show");
   setTimeout(() => popup.classList.add("show-popup"), 10);
   if (typeof document !== "undefined" && document.body) {
+    document.body.classList.add("is-scroll-locked");
     document.body.style.overflow = "hidden";
   }
 }
@@ -368,6 +392,7 @@ function closePopup(popup) {
     const anyOpen = [wishPopup, partyPopup, sharePopup, gamePopup, rizzPopup, musicPopup, aboutPopup, memoriesPopup, picsPopup]
       .some((p) => p && p.style.display === "block");
     if (!anyOpen && typeof document !== "undefined" && document.body) {
+      document.body.classList.remove("is-scroll-locked");
       document.body.style.overflow = "";
     }
   }, 300);
@@ -384,6 +409,10 @@ const overlayClickHandler = () => {
   });
 
   overlay.classList.remove("show");
+  if (typeof document !== "undefined" && document.body) {
+    document.body.classList.remove("is-scroll-locked");
+    document.body.style.overflow = "";
+  }
 
   // Reset About popup properly
   aboutTypingTimeouts.forEach(timeout => clearTimeout(timeout));
@@ -775,26 +804,19 @@ let rizzOutput = document.getElementById("rizzOutput");
 let heartBurstContainer = document.getElementById("heartBurstContainer");
 
 const rizzLines = [
-  "Are you my favorite song? Because I could listen to you forever. ðŸ’–",
-  "You walked into my life and suddenly everything felt brighter. âœ¨",
-  "If I had one wish, Iâ€™d spend every birthday with you. ðŸŽ‚",
-  "Youâ€™re the kind of person my heart would always choose. â¤ï¸",
-  "Are you WiFi? Because Iâ€™m feeling a strong connection. ðŸ“¶ðŸ˜‚",
-  "Do you believe in love at first sight, or should I walk by again? ðŸ˜",
-  "You must be a magician, because whenever I see you, everyone else disappears. ðŸŽ©",
-  "You must be a keyboard, because youâ€™re just my type. âŒ¨ï¸ðŸ˜‚",
-  "Are you cheese? Because you make everything better. ðŸ§€",
-  "If beauty were time, youâ€™d be eternity. â³",
-  "You must be made of stars, because you light up everything. ðŸŒŸ",
-  "You stole my heart... should I call the police? ðŸš”â¤ï¸",
-  "You look like trouble... and honestly, I like that. ðŸ˜‰",
-  "If I flirt any harder, this page might catch fire. ðŸ”¥",
-  "Youâ€™re dangerously cute, and Iâ€™m not complaining. ðŸ˜Œ",
-  "I was doing fine until you showed up looking like that. ðŸ˜",
-  "Are you JavaScript? Because you make my heart asynchronous. ðŸ’»â¤ï¸",
-  "You must be a function, because you complete my life. ðŸ¤“",
-  "Are you CSS? Because youâ€™ve styled my whole mood. ðŸŽ¨",
-  "Youâ€™re like clean code â€” rare and beautiful. âœ¨"
+  "I don't need Spotify recommendations anymore. You already became my favorite track.",
+  "If confidence had a face, it'd still be nervous talking to you.",
+  "You're proof that God flexes sometimes.",
+  "I swear your voice fixes bad days faster than sleep.",
+  "You're the only distraction I've never tried to fix.",
+  "You're the first person I want to tell things to.",
+  "You've got me smiling at my phone like an idiot in public.",
+  "You walked in and suddenly everyone else became background characters.",
+  "Loving you feels less like a choice and more like something my heart decided before I could think.",
+  "I could have the worst day ever, and one message from you still fixes it.",
+  "Even in a crowded room, my eyes still search for you first.",
+  "I don't need perfect days. I just need days with you in them.",
+  "No matter how busy life gets, you'll always be my favorite part of it."
 ];
 
 let lastRizzIndex = -1;
@@ -932,24 +954,6 @@ function fireHeartBurst(count = 14) {
   }
 }
 
-/* =========================
-   BG MUSIC SETTINGS LOGIC
-========================= */
-bgToggleLink.onclick = () => {
-  if (bgLoop.paused) {
-    bgLoop.play();
-    bgToggleLink.innerText = "â¸ Pause";
-  } else {
-    bgLoop.pause();
-    bgToggleLink.innerText = "â–¶ Play";
-  }
-};
-
-bgVolumeSlider.oninput = (e) => {
-  bgLoop.volume = e.target.value;
-};
-
-/* =========================*/
 function closeMusic() {
   stopIntroMusic(); // force stop bgm too
   closePopup(musicPopup);
@@ -1177,6 +1181,20 @@ function startAboutTyping() {
   if (aboutContent) {
     aboutContent.scrollTop = 0;
   }
+  if (aboutText) {
+    aboutText.scrollTop = 0;
+  }
+
+  const slideAboutText = () => {
+    window.requestAnimationFrame(() => {
+      if (aboutContent) {
+        aboutContent.scrollTop = aboutContent.scrollHeight;
+      }
+      if (aboutText) {
+        aboutText.scrollTop = aboutText.scrollHeight;
+      }
+    });
+  };
 
   // Start blur effect after a short delay
   setTimeout(() => {
@@ -1201,16 +1219,12 @@ function startAboutTyping() {
       if (charIndex < point.length) {
         span.textContent += point[charIndex];
         charIndex++;
-        if (aboutContent) {
-          aboutContent.scrollTop = aboutContent.scrollHeight;
-        }
+        slideAboutText();
         let t = setTimeout(typeLetter, 30);
         aboutTypingTimeouts.push(t);
       } else {
         pointIndex++;
-        if (aboutContent) {
-          aboutContent.scrollTop = aboutContent.scrollHeight;
-        }
+        slideAboutText();
         let t = setTimeout(typeNextPoint, 300);
         aboutTypingTimeouts.push(t);
       }

@@ -40,8 +40,6 @@ const formatBytes = (bytes = 0) => {
   return `${sizeFormatter.format(value)} ${units[unitIndex]}`;
 };
 
-const normalizeEmail = (value = '') => value.trim().toLowerCase();
-
 const getSubmissionLabel = (row) => {
   const labels = [];
   const attachmentCount = row.attachment_meta?.length || 0;
@@ -59,16 +57,10 @@ const getAttachmentPaths = (row) =>
 
 const getSubmissionTime = (row) => (row.created_at ? new Date(row.created_at).getTime() : 0);
 
-const getOwnerKey = (row) => normalizeEmail(row.user_email) || 'guest';
-
-const getOwnerLabel = (row) => row.user_email?.trim() || 'Guest submissions';
-
 const getDownloadName = (item) => item.name || item.path?.split('/').pop() || 'download';
 
 const getRowSearchText = (row) =>
   [
-    row.user_email,
-    row.bundle_id,
     row.message,
     ...(row.attachment_meta || []).map((attachment) => attachment.name),
   ]
@@ -196,8 +188,8 @@ function buildGroups(rows, query, filterMode) {
   const groups = new Map();
 
   filteredRows.forEach((row) => {
-    const key = getOwnerKey(row);
-    const label = getOwnerLabel(row);
+    const key = 'all-submissions';
+    const label = 'Latest submissions';
 
     if (!groups.has(key)) {
       groups.set(key, {
@@ -230,7 +222,7 @@ function GroupSubmissionCard({ row, signedUrls }) {
       <div className="admin-submission__header">
         <div>
           <span className="admin-submission__badge">{getSubmissionLabel(row)}</span>
-          <h3>{row.bundle_id}</h3>
+          <h3>{row.created_at ? timeFormatter.format(new Date(row.created_at)) : 'Time not saved'}</h3>
         </div>
       </div>
 
@@ -263,14 +255,14 @@ function GroupSubmissionCard({ row, signedUrls }) {
   );
 }
 
-export default function AdminDashboard({ onBackHome, userEmail }) {
+export default function AdminDashboard({ onBackHome }) {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [signedUrls, setSignedUrls] = useState({});
-  const [query, setQuery] = useState('');
-  const [filterMode, setFilterMode] = useState('all');
+  const query = '';
+  const filterMode = 'all';
 
   useEffect(() => {
     let mounted = true;
@@ -329,25 +321,12 @@ export default function AdminDashboard({ onBackHome, userEmail }) {
     const total = submissions.length;
     const withMedia = submissions.filter((item) => item.hasMedia).length;
     const files = submissions.reduce((count, item) => count + item.attachmentItems.length, 0);
-    const senders = new Set(submissions.map((item) => getOwnerKey(item))).size;
-
     return [
       { label: 'Submissions', value: total },
-      { label: 'Senders', value: senders },
       { label: 'Media', value: withMedia },
       { label: 'Files', value: files },
     ];
   }, [submissions]);
-
-  const filterTabs = [
-    { id: 'all', label: `All (${submissions.length})` },
-    { id: 'text', label: `Text (${submissions.filter((item) => item.hasMessage).length})` },
-    { id: 'media', label: `Media (${submissions.filter((item) => item.hasMedia).length})` },
-    {
-      id: 'empty',
-      label: `Empty (${submissions.filter((item) => !item.hasMessage && !item.hasMedia).length})`,
-    },
-  ];
 
   const refreshInbox = async () => {
     if (refreshing) return;
@@ -396,30 +375,7 @@ export default function AdminDashboard({ onBackHome, userEmail }) {
 
       <section className="admin-hero">
         <div className="admin-hero__copy">
-          <span className="admin-hero__eyebrow">Logged in as {userEmail || 'admin'}</span>
-          <div className="admin-hero__controls">
-            <label className="admin-search">
-              <input
-                type="search"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search submissions"
-              />
-            </label>
-
-            <div className="admin-filters" role="tablist" aria-label="Submission filters">
-              {filterTabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  className={`admin-filter ${filterMode === tab.id ? 'is-active' : ''}`}
-                  onClick={() => setFilterMode(tab.id)}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          <span className="admin-hero__eyebrow">Data and time</span>
 
           <div className="admin-hero__meta">
             <span className="admin-hero__pill">
@@ -452,8 +408,8 @@ export default function AdminDashboard({ onBackHome, userEmail }) {
               <article className="admin-user-group" key={group.key}>
                 <div className="admin-user-group__header">
                   <div className="admin-user-group__heading">
-                    <span className="admin-user-group__badge">{group.isGuest ? 'Guest lane' : 'User lane'}</span>
-                    <h3>{group.label}</h3>
+                    <span className="admin-user-group__badge">Thank-you data</span>
+                    <h3>Latest submissions</h3>
                   </div>
 
                   <div className="admin-user-group__meta">
