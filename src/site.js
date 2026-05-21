@@ -7,6 +7,7 @@ const bgm = document.getElementById("bgm");
 bgm.volume = 0.3;
 const startBtn = document.getElementById("startBtn");
 const startScreen = document.getElementById("startScreen");
+const heroVideo = document.querySelector(".birthday-hero__bg-video");
 const intro = document.getElementById("intro");
 const mainContent = document.getElementById("mainContent");
 
@@ -110,6 +111,9 @@ const isTouchDevice =
 const prefersReducedMotion =
   typeof window !== "undefined" &&
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const isMobilePerformanceMode =
+  typeof window !== "undefined" &&
+  window.matchMedia("(max-width: 768px), (pointer: coarse)").matches;
 const COSMIC_THEME = "cosmic";
 const CLASSIC_THEME = "classic";
 let starAnimationFrameId;
@@ -262,7 +266,7 @@ function syncBackdropTheme(nextTheme) {
 function setupCosmicBackdrop() {
   const stopCursorTrail = setupCursorTrail();
 
-  if (starCanvas && starCtx) {
+  if (starCanvas && starCtx && !isMobilePerformanceMode && !prefersReducedMotion) {
     resizeHandler = () => {
       resizeStarCanvas();
     };
@@ -318,6 +322,9 @@ let introMusicEnded = false;
 startBtn.onclick = function () {
   startScreen.style.opacity = "0";
   startScreen.style.pointerEvents = "none";
+  if (heroVideo) {
+    heroVideo.pause();
+  }
 
   if (intro) {
     intro.classList.remove("intro-candle-on");
@@ -382,6 +389,7 @@ function openPopup(popup) {
     document.body.classList.add("is-scroll-locked");
     document.body.style.overflow = "hidden";
   }
+  fireCardOpenConfetti();
 }
 
 function closePopup(popup) {
@@ -573,7 +581,7 @@ function quickReply(type) {
    CONFETTI
 ========================= */
 function dropTopConfetti() {
-  if (typeof confetti !== "function") {
+  if (isMobilePerformanceMode || typeof confetti !== "function") {
     return;
   }
 
@@ -593,6 +601,10 @@ function dropTopConfetti() {
 }
 
 function sideConfetti() {
+  if (isMobilePerformanceMode || typeof confetti !== "function") {
+    return;
+  }
+
   for (let i = 0; i < 3; i++) {
     setTimeout(() => {
       confetti({
@@ -619,6 +631,49 @@ function sideConfetti() {
   confettiRainIntervalId = setInterval(dropTopConfetti, 2200);
 }
 
+function fireCardOpenConfetti() {
+  if (prefersReducedMotion || typeof confetti !== "function") {
+    return;
+  }
+
+  const particleCount = isMobilePerformanceMode ? 55 : 90;
+  const scalar = isMobilePerformanceMode ? 0.72 : 0.9;
+
+  confetti({
+    particleCount,
+    spread: 72,
+    startVelocity: 36,
+    gravity: 0.95,
+    ticks: 160,
+    scalar,
+    origin: { x: 0.5, y: 0.62 }
+  });
+
+  if (isMobilePerformanceMode) {
+    return;
+  }
+
+  setTimeout(() => {
+    confetti({
+      particleCount: 36,
+      angle: 60,
+      spread: 55,
+      startVelocity: 30,
+      scalar: 0.75,
+      origin: { x: 0.08, y: 0.72 }
+    });
+
+    confetti({
+      particleCount: 36,
+      angle: 120,
+      spread: 55,
+      startVelocity: 30,
+      scalar: 0.75,
+      origin: { x: 0.92, y: 0.72 }
+    });
+  }, 120);
+}
+
 function stopHeartRain() {
   if (heartRainIntervalId) {
     clearInterval(heartRainIntervalId);
@@ -628,7 +683,10 @@ function stopHeartRain() {
 
 function startHeartRain() {
   stopHeartRain();
-  fireHeartBurst(8);
+  fireHeartBurst(isMobilePerformanceMode ? 3 : 8);
+  if (isMobilePerformanceMode) {
+    return;
+  }
   heartRainIntervalId = setInterval(() => fireHeartBurst(3), 700);
 }
 
@@ -650,7 +708,7 @@ function spawnCardHeart() {
 }
 
 function startCardHeartRain() {
-  if (!cardHeartLayer) {
+  if (!cardHeartLayer || isMobilePerformanceMode) {
     return;
   }
 

@@ -720,7 +720,7 @@ function BirthdayExperience({
       </div>
 
       <audio id="bgm">
-        <source src="/bgm.mp3" type="audio/mpeg" />
+        <source src="/bg_intro_music.mpeg" type="audio/mpeg" />
       </audio>
 
       <main id="mainContent" className="home-shell">
