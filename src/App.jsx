@@ -851,9 +851,8 @@ function BirthdayExperience({
           <h2>💌 Some Wishes for You</h2>
           <div className="message-card">
             <p>✨ May your smile always stay this bright.</p>
-            <p>💖 May life give you peace, success, and endless happiness.</p>
-            <p>🌸 May every dream you have slowly turn into reality.</p>
-            <p>🎂 And may this year be kinder, sweeter, and more beautiful for you.</p>
+            <p>💖 May life give you peace, success, and endless happiness May every dream you have slowly turn into reality.</p>
+          
             <p>🌸Happy Birthday to the most special girl in my life 🥰🩶</p>
 <p>💖Every moment with you feels like something I never want to lose ❣️</p>
 <p>🎂I am grateful for your smile, your care, your madness, and even your stubbornness❤️</p>
