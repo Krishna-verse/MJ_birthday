@@ -1332,6 +1332,27 @@ body[data-theme='cosmic'] .hero-title-wrap--dark .hero-letter--down {
   gap: 16px;
 }
 
+.admin-submission__delete-btn {
+  background: rgba(255, 90, 90, 0.1);
+  border: 1px solid rgba(255, 90, 90, 0.2);
+  color: #ff5a5a;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-size: 1.1rem;
+}
+
+.admin-submission__delete-btn:hover {
+  background: #ff5a5a;
+  color: #fff;
+  transform: scale(1.05);
+}
+
 .admin-submission__badge {
   display: inline-flex;
   margin-bottom: 10px;

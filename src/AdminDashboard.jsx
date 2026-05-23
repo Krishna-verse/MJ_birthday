@@ -217,7 +217,7 @@ function buildGroups(rows, query, filterMode) {
     }));
 }
 
-function GroupSubmissionCard({ row, signedUrls }) {
+function GroupSubmissionCard({ row, signedUrls, onDelete }) {
   const senderEmail = row.user_email?.trim();
 
   return (
@@ -230,6 +230,13 @@ function GroupSubmissionCard({ row, signedUrls }) {
             Sender: <strong>{senderEmail || 'Email not saved'}</strong>
           </p>
         </div>
+        <button 
+          className="admin-submission__delete-btn" 
+          onClick={() => onDelete(row)}
+          title="Delete submission"
+        >
+          🗑️
+        </button>
       </div>
 
       {row.message?.trim() ? (
@@ -271,6 +278,37 @@ export default function AdminDashboard({ onBackHome }) {
   const [signedUrls, setSignedUrls] = useState({});
   const query = '';
   const filterMode = 'all';
+
+  const handleDeleteSubmission = async (row) => {
+    if (!window.confirm('Are you sure you want to delete this submission? This will remove the database record and any associated files.')) {
+      return;
+    }
+
+    try {
+      // 1. Delete from storage (Supabase handles missing files gracefully)
+      if (row.storage_paths?.length) {
+        await supabase.storage.from(STORAGE_BUCKET).remove(row.storage_paths);
+      }
+
+      // 2. Delete the record from the database table
+      const { error: dbError } = await supabase
+        .from(SUBMISSIONS_TABLE)
+        .delete()
+        .eq('bundle_id', row.bundle_id);
+
+      if (dbError) throw dbError;
+
+      // 3. Update local state
+      setSubmissions(prev => prev.filter(s => s.bundle_id !== row.bundle_id));
+      setSignedUrls(prev => {
+        const next = { ...prev };
+        row.storage_paths?.forEach(path => delete next[path]);
+        return next;
+      });
+    } catch (err) {
+      setError('Failed to delete: ' + err.message);
+    }
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -435,6 +473,7 @@ export default function AdminDashboard({ onBackHome }) {
                       key={row.id || row.bundle_id}
                       row={row}
                       signedUrls={signedUrls}
+                      onDelete={handleDeleteSubmission}
                     />
                   ))}
                 </div>
