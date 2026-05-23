@@ -16,6 +16,86 @@ const AUTH_COOLDOWN_MS = 60 * 1000;
 const LAST_SIGNED_IN_EMAIL_KEY = 'harshi-7-last-signed-in-email';
 const THEME_STORAGE_KEY = 'harshi-7-theme';
 const CLASSIC_THEME = 'classic';
+const PRIVATE_IMAGES_BUCKET = 'private_images';
+const PRIVATE_IMAGE_EXTENSIONS = /\.(avif|gif|jpe?g|png|webp)$/i;
+const PIC_SLIDE_DIRECTIONS = ['left', 'right', 'up', 'down'];
+
+const getRandomPicSlideDirection = () =>
+  PIC_SLIDE_DIRECTIONS[Math.floor(Math.random() * PIC_SLIDE_DIRECTIONS.length)];
+
+function PrivatePicCanvas({ pic, direction, label }) {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    if (!pic?.url) {
+      return () => {};
+    }
+
+    const canvas = canvasRef.current;
+    const image = new Image();
+    let ignore = false;
+
+    const drawImage = () => {
+      if (ignore || !canvas || !image.naturalWidth || !image.naturalHeight) {
+        return;
+      }
+
+      const rect = canvas.getBoundingClientRect();
+      const ratio = window.devicePixelRatio || 1;
+      const width = Math.max(1, Math.round(rect.width * ratio));
+      const height = Math.max(1, Math.round(rect.height * ratio));
+
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+
+      const context = canvas.getContext('2d');
+      if (!context) {
+        return;
+      }
+
+      context.clearRect(0, 0, width, height);
+      context.fillStyle = 'rgba(8, 8, 10, 0.92)';
+      context.fillRect(0, 0, width, height);
+
+      const imageScale = Math.min(width / image.naturalWidth, height / image.naturalHeight);
+      const drawWidth = image.naturalWidth * imageScale;
+      const drawHeight = image.naturalHeight * imageScale;
+      const drawX = (width - drawWidth) / 2;
+      const drawY = (height - drawHeight) / 2;
+
+      context.imageSmoothingEnabled = true;
+      context.imageSmoothingQuality = 'high';
+      context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+    };
+
+    image.onload = drawImage;
+    image.src = pic.url;
+
+    const observer = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(drawImage)
+      : null;
+    observer?.observe(canvas);
+    window.addEventListener('resize', drawImage);
+
+    return () => {
+      ignore = true;
+      observer?.disconnect();
+      window.removeEventListener('resize', drawImage);
+    };
+  }, [pic?.url]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className={`pics-main-img pics-main-img--${direction}`}
+      aria-label={label}
+      role="img"
+      onContextMenu={(event) => event.preventDefault()}
+    />
+  );
+}
 
 const lockBodyScroll = () => {
   if (typeof document === 'undefined') return;
@@ -88,7 +168,7 @@ const cards = [
   { id: 'musicCard', title: 'Music Player', text: 'Play your birthday playlist', icon: '\u{1F3B5}' },
   { id: 'aboutCard', title: 'About You', text: 'Little things that make you, you', icon: '\u{1FAF6}' },
   { id: 'memoriesCard', title: 'Our Memories', text: 'Little moments we keep forever', icon: '\u{1F5A4}' },
-  { id: 'picsCard', title: 'Our Pics', text: 'A tiny photo corner for us', icon: '\u{1F5BC}\u{FE0F}' },
+  { id: 'picsCard', title: 'Your Pics', text: 'A tiny photo corner for you', icon: '\u{1F5BC}\u{FE0F}' },
   { id: 'rizzCard', title: 'Rizz for You', text: 'Smooth lines only', icon: '\u{1F60F}' }
 ];
 
@@ -491,6 +571,12 @@ function BirthdayExperience({
   const [adminDockOpen, setAdminDockOpen] = useState(false);
   const [clockNow, setClockNow] = useState(() => Date.now());
   const [introCakeKey, setIntroCakeKey] = useState(0);
+  const [privatePics, setPrivatePics] = useState([]);
+  const [privatePicsIndex, setPrivatePicsIndex] = useState(0);
+  const [privatePicsDirection, setPrivatePicsDirection] = useState('right');
+  const [privatePicsPrevious, setPrivatePicsPrevious] = useState(null);
+  const [privatePicsLoading, setPrivatePicsLoading] = useState(true);
+  const [privatePicsError, setPrivatePicsError] = useState('');
   const cardsTimer = useRef(null);
   const cleanupRef = useRef(null);
   const thankYouRevealRef = useRef(null);
@@ -530,6 +616,33 @@ function BirthdayExperience({
 
   const resetNotInterestedButton = () => {
     setNotInterestedShift({ x: 0, y: 0 });
+  };
+
+  const playNotInterestedSound = () => {
+    if (typeof Audio === 'undefined') {
+      return;
+    }
+
+    const sound = new Audio('/Faah.mpeg');
+    sound.volume = 1;
+    sound.play().catch(() => {});
+  };
+
+  const movePrivatePic = (step) => {
+    if (!privatePics.length) {
+      return;
+    }
+
+    const nextDirection = getRandomPicSlideDirection();
+    setPrivatePicsDirection(nextDirection);
+    setPrivatePicsIndex((index) => {
+      setPrivatePicsPrevious({
+        direction: nextDirection,
+        index,
+        pic: privatePics[index],
+      });
+      return (index + step + privatePics.length) % privatePics.length;
+    });
   };
 
   useEffect(() => {
@@ -573,6 +686,172 @@ function BirthdayExperience({
 
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    let ignore = false;
+
+    const loadPrivatePics = async () => {
+      if (!supabase) {
+        setPrivatePicsLoading(false);
+        setPrivatePicsError('Supabase is not configured yet.');
+        return;
+      }
+
+      setPrivatePicsLoading(true);
+      setPrivatePicsError('');
+
+      const listImagePaths = async (folder = '') => {
+        const { data: files, error: listError } = await supabase.storage
+          .from(PRIVATE_IMAGES_BUCKET)
+          .list(folder, {
+            limit: 100,
+            sortBy: { column: 'name', order: 'asc' },
+          });
+
+        if (listError) {
+          throw listError;
+        }
+
+        const paths = [];
+
+        for (const file of files || []) {
+          const path = folder ? `${folder}/${file.name}` : file.name;
+
+          if (PRIVATE_IMAGE_EXTENSIONS.test(file.name)) {
+            paths.push(path);
+          } else if (!file.name.includes('.')) {
+            const nestedPaths = await listImagePaths(path);
+            paths.push(...nestedPaths);
+          }
+        }
+
+        return paths;
+      };
+
+      let imagePaths = [];
+
+      try {
+        imagePaths = await listImagePaths();
+      } catch (listError) {
+        if (ignore) return;
+        setPrivatePics([]);
+        setPrivatePicsError(listError.message || 'Could not load private images.');
+        setPrivatePicsLoading(false);
+        return;
+      }
+
+      if (ignore) return;
+
+      if (!imagePaths.length) {
+        setPrivatePics([]);
+        setPrivatePicsError('No images found in private_images.');
+        setPrivatePicsLoading(false);
+        return;
+      }
+
+      const { data: signedFiles, error: signedError } = await supabase.storage
+        .from(PRIVATE_IMAGES_BUCKET)
+        .createSignedUrls(imagePaths, 120);
+
+      if (ignore) return;
+
+      if (signedError) {
+        setPrivatePics([]);
+        setPrivatePicsError(signedError.message || 'Could not open private images.');
+        setPrivatePicsLoading(false);
+        return;
+      }
+
+      const objectUrls = [];
+      const nextPics = (await Promise.all(
+        (signedFiles || []).map(async (item, index) => {
+          if (!item.signedUrl) {
+            return null;
+          }
+
+          try {
+            const response = await fetch(item.signedUrl, { cache: 'no-store' });
+            if (!response.ok) {
+              return null;
+            }
+
+            const blob = await response.blob();
+            const objectUrl = URL.createObjectURL(blob);
+            objectUrls.push(objectUrl);
+
+            return {
+              path: imagePaths[index],
+              url: objectUrl,
+            };
+          } catch {
+            return null;
+          }
+        })
+      )).filter(Boolean);
+
+      if (ignore) {
+        objectUrls.forEach((url) => URL.revokeObjectURL(url));
+        return undefined;
+      }
+
+      setPrivatePics(nextPics);
+      setPrivatePicsIndex(0);
+      setPrivatePicsLoading(false);
+
+      return () => {
+        objectUrls.forEach((url) => URL.revokeObjectURL(url));
+      };
+    };
+
+    let revokeLoadedPics = () => {};
+    loadPrivatePics().then((cleanup) => {
+      if (typeof cleanup === 'function') {
+        if (ignore) {
+          cleanup();
+        } else {
+          revokeLoadedPics = cleanup;
+        }
+      }
+    });
+
+    return () => {
+      ignore = true;
+      revokeLoadedPics();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (privatePics.length < 2) {
+      return () => {};
+    }
+
+    const timer = window.setInterval(() => {
+      const nextDirection = getRandomPicSlideDirection();
+      setPrivatePicsDirection(nextDirection);
+      setPrivatePicsIndex((index) => {
+        setPrivatePicsPrevious({
+          direction: nextDirection,
+          index,
+          pic: privatePics[index],
+        });
+        return (index + 1) % privatePics.length;
+      });
+    }, 3600);
+
+    return () => window.clearInterval(timer);
+  }, [privatePics]);
+
+  useEffect(() => {
+    if (!privatePicsPrevious) {
+      return () => {};
+    }
+
+    const timer = window.setTimeout(() => {
+      setPrivatePicsPrevious(null);
+    }, 950);
+
+    return () => window.clearTimeout(timer);
+  }, [privatePicsPrevious]);
 
   useEffect(() => {
     const target = thankYouRevealRef.current;
@@ -681,6 +960,7 @@ function BirthdayExperience({
                 onPointerMove={moveNotInterestedButton}
                 onPointerDown={(event) => {
                   event.preventDefault();
+                  playNotInterestedSound();
                   moveNotInterestedButton(event);
                 }}
                 onPointerLeave={resetNotInterestedButton}
@@ -976,12 +1256,60 @@ function BirthdayExperience({
 
         <div id="picsPopup" className="popup-box pics-popup">
           <span className="popup-close" onClick={() => window.closePics?.()}>&times;</span>
-          <h2>🖼️ Our Pics</h2>
-          <p className="pics-subtitle">A tiny gallery spot for your favorite photo.</p>
+          <h2>🖼️ Your Pics</h2>
+          <p className="pics-subtitle">Your private gallery, one memory at a time.</p>
           <div className="pics-frame">
-            <img src="/harshi_img.jpeg" alt="Our memory" className="pics-main-img" />
+            {privatePicsLoading ? (
+              <div className="pics-state">Loading photos...</div>
+            ) : privatePics.length ? (
+              <>
+                <div className="pics-viewport">
+                  {privatePicsPrevious ? (
+                    <PrivatePicCanvas
+                      key={`previous-${privatePicsPrevious.pic.path}-${privatePicsPrevious.direction}`}
+                      pic={privatePicsPrevious.pic}
+                      direction={`exit-${privatePicsPrevious.direction}`}
+                      label={`Previous private memory ${privatePicsPrevious.index + 1}`}
+                    />
+                  ) : null}
+                  <PrivatePicCanvas
+                    key={`${privatePics[privatePicsIndex].path}-${privatePicsDirection}`}
+                    pic={privatePics[privatePicsIndex]}
+                    direction={`enter-${privatePicsDirection}`}
+                    label={`Private memory ${privatePicsIndex + 1}`}
+                  />
+                </div>
+                {privatePics.length > 1 ? (
+                  <div className="pics-controls" aria-label="Photo slideshow controls">
+                    <button
+                      type="button"
+                      className="pics-control"
+                      aria-label="Previous photo"
+                      onClick={() => movePrivatePic(-1)}
+                    >
+                      ‹
+                    </button>
+                    <span className="pics-count">
+                      {privatePicsIndex + 1} / {privatePics.length}
+                    </span>
+                    <button
+                      type="button"
+                      className="pics-control"
+                      aria-label="Next photo"
+                      onClick={() => movePrivatePic(1)}
+                    >
+                      ›
+                    </button>
+                  </div>
+                ) : null}
+              </>
+            ) : (
+              <div className="pics-state">{privatePicsError || 'No photos found yet.'}</div>
+            )}
           </div>
-          <p className="pics-caption">More photos can live here later. For now, this is the main one.</p>
+          {!privatePics.length && (
+            <p className="pics-caption">Upload images to the private_images bucket to show them here.</p>
+          )}
         </div>
       </div>
 

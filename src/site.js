@@ -50,8 +50,15 @@ let introCandleTimer;
 let introCutTimer;
 const cardHeartLayer = document.getElementById("heartFloatLayer");
 
+function pauseBackgroundMusicForPlayer() {
+  if (bgm) {
+    bgm.pause();
+  }
+  bgLoop.pause();
+}
+
 function resumeBackgroundLoop() {
-  if (!bgLoop || isPlaying) {
+  if (!bgLoop || isPlaying || (audioPlayer && !audioPlayer.paused)) {
     return;
   }
 
@@ -1053,16 +1060,20 @@ function closeMusic() {
 ========================= */
 const songs = [
   {
-    title: "My Baby",
-    url: "/my baby.mp3.mpeg"
+    title: "Aurora",
+    url: "/Aurora.mpeg"
   },
   {
-    title: "Birthday Track 2",
-    url: "/2.mp3"
+    title: "Bairan",
+    url: "/Bairan.mpeg"
   },
   {
-    title: "Birthday Track 3",
-    url: "/3.mp3"
+    title: "New West",
+    url: "/New west Those eyes.mpeg"
+  },
+  {
+    title: "Runaway",
+    url: "/Runawaympeg"
   },
   // {
   //   title: "Song 4",
@@ -1204,12 +1215,17 @@ audioPlayer.onended = () => {
 
 audioPlayer.ontimeupdate = updateMusicProgress;
 audioPlayer.onloadedmetadata = updateMusicProgress;
+audioPlayer.addEventListener("play", () => {
+  pauseBackgroundMusicForPlayer();
+});
+audioPlayer.addEventListener("pause", () => {
+  if (!isPlaying) {
+    resumeBackgroundLoop();
+  }
+});
 
 function playSong() {
-  if (bgm) {
-    bgm.pause();
-  }
-  bgLoop.pause();
+  pauseBackgroundMusicForPlayer();
   if (!audioPlayer.src) {
     audioPlayer.src = songs[currentSong].url;
     audioPlayer.load();
@@ -1248,8 +1264,7 @@ function loadSong(index, autoplay = true) {
     audioPlayer.pause();
     isPlaying = false;
   } else {
-    bgLoop.pause();
-    if (bgm) bgm.pause();
+    pauseBackgroundMusicForPlayer();
     audioPlayer.currentTime = 0;
     isPlaying = true;
     const playPromise = audioPlayer.play();
