@@ -2397,6 +2397,42 @@ header p {
   margin-top: 15px;
   border: 1px solid var(--border-soft);
 }
+/* WISHES POPUP IMAGE BACKGROUND AND ANIMATION */
+.wish-popup {
+  max-width: 650px;
+  padding: 0;
+  overflow: hidden;
+  text-align: left;
+  min-height: 0;
+  height: min(560px, calc(100dvh - 32px));
+  max-height: calc(100dvh - 32px);
+}
+
+.wish-image-wrap {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transition: all 0.8s ease;
+  z-index: 0;
+  background-image: url('/wishes_bg.jpeg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  overflow: hidden;
+}
+
+.wish-image-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0);
+  transition: all 1s ease;
+}
+
+.wish-popup.blur-active .wish-image-wrap {
+  transform: scale(1.08);
+  filter: blur(0.5px) brightness(0.65);
+}
 
 #wishPopup .message-card {
   padding: 22px 24px;
@@ -2446,6 +2482,45 @@ header p {
 
 #wishPopup .message-card p:nth-child(9) {
   animation-delay: 3550ms;
+}
+
+#wishPopup .message-card {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.wish-popup.blur-active .wish-image-overlay {
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.1),
+    rgba(0,0,0,0.65)
+  );
+}
+
+.wish-content {
+  padding: 50px 22px 28px;
+  position: relative;
+  z-index: 1;
+  background: rgba(0, 0, 0, 0.3);
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-color: #f37ba4 rgba(255, 214, 226, 0.12);
+  scrollbar-width: thin;
+}
+
+@media (max-width: 768px) {
+  .wish-popup {
+    height: min(520px, calc(100dvh - 24px));
+    max-height: calc(100dvh - 24px);
+  }
+  .wish-content {
+    padding: 45px 18px 24px;
+  }
 }
 
 /* VIDEO */
@@ -5242,14 +5317,12 @@ header p {
   position: relative;
   isolation: isolate;
   z-index: 1;
-  width: min(100%, 1120px);
+  width: min(100%, 1280px);
   max-height: calc(100vh - 44px);
   overflow: auto;
   padding: 28px;
   border-radius: 30px;
-  background:
-    linear-gradient(180deg, rgba(18, 18, 24, 0.84), rgba(8, 8, 12, 0.9)),
-    rgba(9, 11, 19, 0.86);
+  background: #090b13f5;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow:
     0 28px 72px rgba(0, 0, 0, 0.5),
@@ -5668,10 +5741,7 @@ header p {
 
 .thank-you-compose {
   min-height: 100%;
-  padding: 20px;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 10px 0;
 }
 
 .thank-you-compose__voice,
@@ -5679,10 +5749,7 @@ header p {
 .thank-you-compose__upload {
   display: grid;
   gap: 12px;
-  padding: 20px;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 10px 0;
 }
 
 .thank-you-compose__voice-copy {
@@ -6034,7 +6101,7 @@ header p {
 
 .thank-you-filter-strip {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(82px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   margin: 2px 0 14px;
 }
@@ -9447,6 +9514,43 @@ body[data-theme='classic'] .feature-card--thank-you::after {
   box-shadow:
     -16px 18px 34px rgba(255, 183, 206, 0.16),
     -8px 10px 22px rgba(255, 107, 138, 0.18);
+}
+
+/* Specific circle colors for each card right top */
+#wishCard::after {
+  background: radial-gradient(circle at 34% 66%, rgba(255, 255, 255, 0.58), transparent 18%),
+              linear-gradient(135deg, #ff9999, #ff4d4d 48%, #cc0000);
+  box-shadow: -16px 18px 34px rgba(255, 0, 0, 0.16), -8px 10px 22px rgba(204, 0, 0, 0.18);
+}
+
+#musicCard::after {
+  background: radial-gradient(circle at 34% 66%, rgba(255, 255, 255, 0.58), transparent 18%),
+              linear-gradient(135deg, #eeb2ee, #9370db 48%, #8a2be2);
+  box-shadow: -16px 18px 34px rgba(138, 43, 226, 0.16), -8px 10px 22px rgba(147, 112, 219, 0.18);
+}
+
+#aboutCard::after {
+  background: radial-gradient(circle at 34% 66%, rgba(255, 255, 255, 0.58), transparent 18%),
+              linear-gradient(135deg, #ffffcc, #ffd700 48%, #ffcc00);
+  box-shadow: -16px 18px 34px rgba(255, 215, 0, 0.16), -8px 10px 22px rgba(255, 204, 0, 0.18);
+}
+
+#memoriesCard::after {
+  background: radial-gradient(circle at 34% 66%, rgba(255, 255, 255, 0.58), transparent 18%),
+              linear-gradient(135deg, #eeb2ee, #9370db 48%, #8a2be2);
+  box-shadow: -16px 18px 34px rgba(138, 43, 226, 0.16), -8px 10px 22px rgba(147, 112, 219, 0.18);
+}
+
+#picsCard::after {
+  background: radial-gradient(circle at 34% 66%, rgba(255, 255, 255, 0.58), transparent 18%),
+              linear-gradient(135deg, #e6ffcc, #adff2f 48%, #9acd32);
+  box-shadow: -16px 18px 34px rgba(173, 255, 47, 0.16), -8px 10px 22px rgba(154, 205, 50, 0.18);
+}
+
+#rizzCard::after {
+  background: radial-gradient(circle at 34% 66%, rgba(255, 255, 255, 0.58), transparent 18%),
+              linear-gradient(135deg, #ffcc99, #ff8c00 48%, #ff4500);
+  box-shadow: -16px 18px 34px rgba(255, 69, 0, 0.16), -8px 10px 22px rgba(255, 140, 0, 0.18);
 }
 
 .feature-card > * {

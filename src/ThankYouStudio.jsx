@@ -220,6 +220,7 @@ export default function ThankYouStudio({ open, onClose, userEmail }) {
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
   const [cameraReady, setCameraReady] = useState(false);
+  const [lastCapturedId, setLastCapturedId] = useState(null);
   const [cameraMessage, setCameraMessage] = useState('Open the camera when you are ready.');
   const [recordingState, setRecordingState] = useState('idle');
   const [recordingTime, setRecordingTime] = useState(0);
@@ -297,8 +298,11 @@ export default function ThankYouStudio({ open, onClose, userEmail }) {
 
   function stopRecording(showHint = true) {
     const recorder = recorderRef.current;
+    const mode = recordingState;
+    
     if (recorder && recorder.state !== 'inactive') {
       recorder.stop();
+      if (mode === 'video') playCaptureSound();
     }
 
     if (showHint) {
@@ -307,7 +311,12 @@ export default function ThankYouStudio({ open, onClose, userEmail }) {
   }
 
   function addAttachment(file, kind) {
-    setAttachments((current) => [...current, createAttachment(file, kind)]);
+    const item = createAttachment(file, kind);
+    setAttachments((current) => [...current, item]);
+    if (kind === 'image' || kind === 'video') {
+      setLastCapturedId(item.id);
+      setTimeout(() => setLastCapturedId(null), 3000);
+    }
   }
 
   function removeAttachment(id) {
@@ -360,6 +369,7 @@ export default function ThankYouStudio({ open, onClose, userEmail }) {
       return;
     }
 
+        playCaptureSound();
     const video = cameraRef.current;
     const canvas = document.createElement('canvas');
     canvas.width = video.videoWidth || 1280;
@@ -696,84 +706,9 @@ export default function ThankYouStudio({ open, onClose, userEmail }) {
       >
         {sendSuccess ? (
           <div className="thank-you-success" role="status" aria-live="polite">
-            <div className="thank-you-success__glow thank-you-success__glow--one" aria-hidden="true" />
-            <div className="thank-you-success__glow thank-you-success__glow--two" aria-hidden="true" />
-            <div className="thank-you-success__card">
-              <div className="thank-you-success__badge">Delivered</div>
-              <div className="thank-you-success__mark" aria-hidden="true">
-                <span>✓</span>
-              </div>
-              <h2>Sent successfully</h2>
-              <p>{sendSuccess.sentence}</p>
-
-              <div className="thank-you-success__items" aria-hidden="true">
-                {sendSuccess.items.map((item, index) => (
-                  <span
-                    className="thank-you-success__item"
-                    key={item.kind}
-                    style={{ '--item-index': index }}
-                  >
-                    <strong>{item.short}</strong>
-                    <small>
-                      {item.count} {item.label}
-                      {item.count === 1 ? '' : 's'}
-                    </small>
-                  </span>
-                ))}
-              </div>
-
-              <div className="thank-you-success__actions">
-                <button
-                  type="button"
-                  className="thank-you-success__button thank-you-success__button--ghost"
-                  onClick={() => {
-                    setSendSuccess(null);
-                    resetDraft(false);
-                    setActiveTool('text');
-                  }}
-                >
-                  Send another
-                </button>
-                <button
-                  type="button"
-                  className="thank-you-success__button thank-you-success__button--solid"
-                  onClick={onClose}
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-
-            <div className="thank-you-success__confetti" aria-hidden="true">
-              {Array.from({ length: 14 }).map((_, index) => (
-                <span
-                  key={index}
-                  className="thank-you-success__confetti-piece"
-                  style={{
-                    '--left': `${8 + ((index * 7) % 84)}%`,
-                    '--delay': `${index * 90}ms`,
-                    '--duration': `${3400 + (index % 4) * 300}ms`,
-                    '--rotate': `${(index % 2 === 0 ? 1 : -1) * (18 + index * 2)}deg`,
-                  }}
-                />
-              ))}
-            </div>
           </div>
         ) : (
           <>
-        <div className="thank-you-modal__birthday-watermark" aria-hidden="true">
-          <div className="birthday-finale__panel">
-            <h2 className="birthday-finale__title">
-              <span>Happy</span>
-              <span>Birthday</span>
-            </h2>
-            <div className="birthday-finale__name-row">
-              <span className="birthday-finale__name">Samruddhi</span>
-              <span className="birthday-finale__cake">🎂</span>
-            </div>
-            <p>Wishing you all the magic this world holds ✨</p>
-          </div>
-        </div>
         <div className="thank-you-modal__header">
           <h2>Leave a note, voice, and more for me.</h2>
           <button className="thank-you-modal__close" type="button" onClick={onClose} aria-label="Close">
@@ -958,7 +893,7 @@ export default function ThankYouStudio({ open, onClose, userEmail }) {
             <div className="thank-you-attachments">
               {attachments.length ? (
                 attachments.map((item) => (
-                  <article className="thank-you-attachment" key={item.id}>
+                  <article className={`thank-you-attachment ${lastCapturedId === item.id ? 'is-captured' : ''}`} key={item.id}>
                     <button
                       type="button"
                       className="thank-you-attachment__remove"

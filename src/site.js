@@ -1,4 +1,4 @@
-﻿export function initBirthdaySite() {
+﻿﻿export function initBirthdaySite() {
 /* =========================
    DOM ELEMENTS
 ========================= */
@@ -428,6 +428,7 @@ function closePopup(popup) {
 const overlayClickHandler = () => {
   [wishPopup, partyPopup, sharePopup, gamePopup, rizzPopup, musicPopup, aboutPopup, memoriesPopup, picsPopup].forEach(p => {
     if (p && p.style.display === "block") {
+      p.classList.remove("blur-active");
       p.classList.remove("show-popup");
       p.style.display = "none";
       if (p === rizzPopup) {
@@ -449,6 +450,7 @@ const overlayClickHandler = () => {
   aboutText.innerHTML = "";
   aboutText.classList.add("typing-cursor");
   aboutPopup.classList.remove("blur-active");
+  wishPopup.classList.remove("blur-active");
 
   // Stop music popup audio if needed
   if (audioPlayer && isPlaying) {
@@ -464,7 +466,14 @@ overlay.addEventListener("click", overlayClickHandler);
 /* =========================
    CARD ACTIONS
 ========================= */
-wishCard.onclick = () => openPopup(wishPopup);
+wishCard.onclick = () => {
+  openPopup(wishPopup);
+  // Trigger background animation after opening
+  setTimeout(() => {
+    wishPopup.classList.add("blur-active");
+    startFloatingEffects("wishImageWrap");
+  }, 400);
+};
 musicCard.onclick = () => {
   stopIntroMusic();
   openPopup(musicPopup);
@@ -481,7 +490,14 @@ if (gameCard) {
   };
 }
 
-function closeWish() { closePopup(wishPopup); }
+function closeWish() { 
+  closePopup(wishPopup);
+  // Reset blur effect when closed
+  setTimeout(() => {
+    if (floatingInterval) clearInterval(floatingInterval);
+    wishPopup.classList.remove("blur-active");
+  }, 300);
+}
 function closeShare() { closePopup(sharePopup); }
 function closeMemories() { closePopup(memoriesPopup); }
 function closePics() { closePopup(picsPopup); }
@@ -1524,9 +1540,9 @@ function startAboutTyping() {
   aboutTypingTimeouts.push(startT);
 }
 
-function startFloatingEffects() {
+function startFloatingEffects(containerId = "aboutImageWrap") {
   if (floatingInterval) clearInterval(floatingInterval);
-  const container = document.getElementById("aboutImageWrap");
+  const container = document.getElementById(containerId);
   if (!container) return;
   floatingInterval = setInterval(() => {
     const symbols = ["\u{1F496}", "\u{2728}", "\u{1F338}", "\u{2B50}", "\u{1F498}"];

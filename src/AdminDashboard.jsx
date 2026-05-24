@@ -280,23 +280,41 @@ export default function AdminDashboard({ onBackHome }) {
   const filterMode = 'all';
 
   const handleDeleteSubmission = async (row) => {
-    if (!window.confirm('Are you sure you want to delete this submission? This will remove the database record and any associated files.')) {
+    const confirmMessage = 'Are you sure you want to delete this submission? This will permanently remove the database record and any associated files.';
+    if (!window.confirm(confirmMessage)) {
       return;
     }
 
+    // Identify which column to use for the deletion filter
+    const idColumn = row.id ? 'id' : 'bundle_id';
+    const idValue = row.id || row.bundle_id;
+
     try {
+      setError('');
+      
       // 1. Delete from storage (Supabase handles missing files gracefully)
       if (row.storage_paths?.length) {
-        await supabase.storage.from(STORAGE_BUCKET).remove(row.storage_paths);
+        const { error: storageError } = await supabase.storage.from(STORAGE_BUCKET).remove(row.storage_paths);
+        if (storageError) {
+          console.warn('Storage deletion note:', storageError.message);
+        }
       }
 
-      // 2. Delete the record from the database table
-      const { error: dbError } = await supabase
+      // 2. Delete the record from the database table.
+      // We use .select() to confirm that the row was actually removed.
+      const { data, error: dbError } = await supabase
         .from(SUBMISSIONS_TABLE)
         .delete()
-        .eq('bundle_id', row.bundle_id);
+        .eq(idColumn, idValue)
+        .select();
 
       if (dbError) throw dbError;
+
+      // If data is empty, it means the query ran but no rows were deleted.
+      // This is almost always due to missing RLS policies in Supabase.
+      if (!data || data.length === 0) {
+        throw new Error('Database record not deleted. Please ensure you have added a "DELETE" policy to the table in your Supabase RLS settings.');
+      }
 
       // 3. Update local state
       setSubmissions(prev => prev.filter(s => s.bundle_id !== row.bundle_id));
@@ -306,7 +324,8 @@ export default function AdminDashboard({ onBackHome }) {
         return next;
       });
     } catch (err) {
-      setError('Failed to delete: ' + err.message);
+      console.error('Delete error:', err);
+      setError(err.message || 'Failed to delete the submission.');
     }
   };
 
@@ -349,6 +368,25 @@ export default function AdminDashboard({ onBackHome }) {
       }
     };
 
+    // Set up Realtime listener to update UI when rows are deleted 
+    // (either manually in Supabase or via the automation trigger)
+    const channel = supabase
+      .channel('db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: SUBMISSIONS_TABLE,
+        },
+        (payload) => {
+          // payload.old will contain the ID or bundle_id of the deleted row
+          const deletedBundleId = payload.old.bundle_id;
+          setSubmissions((current) => current.filter((s) => s.bundle_id !== deletedBundleId));
+        }
+      )
+      .subscribe();
+
     load().catch(() => {
       if (mounted) {
         setError('Could not load the inbox.');
@@ -358,6 +396,7 @@ export default function AdminDashboard({ onBackHome }) {
 
     return () => {
       mounted = false;
+      supabase.removeChannel(channel);
     };
   }, []);
 

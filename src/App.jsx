@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from 'react';
+﻿﻿import { useEffect, useRef, useState } from 'react';
 import { supabase } from './lib/supabase';
 import { initBirthdaySite } from './site';
 import AdminDashboard from './AdminDashboard';
@@ -1134,18 +1134,23 @@ function BirthdayExperience({
           </button>
         </div>
 
-        <div id="wishPopup" className="popup-box">
+        <div id="wishPopup" className="popup-box wish-popup">
           <span className="popup-close" onClick={() => window.closeWish?.()}>&times;</span>
-          <h2>💌 Some Wishes for You</h2>
-          <div className="message-card">
-            <p>✨ May your smile always stay this bright.</p>
-            <p>💖 May life give you peace, success, and endless happiness May every dream you have slowly turn into reality.</p>
-          
-            <p>🌸Happy Birthday to the most special girl in my life 🥰🩶</p>
-<p>💖Every moment with you feels like something I never want to lose ❣️</p>
-<p>🎂I am grateful for your smile, your care, your madness, and even your stubbornness❤️</p>
-<p>✨I just want to keep making memories with you 🥰</p>
-<p>🌸Today is your day, and I hope you feel loved every second of it🩶😉</p>
+          <div className="wish-image-wrap" id="wishImageWrap">
+            <div className="wish-image-overlay" />
+          </div>
+          <div className="wish-content">
+            <h2>💌 Some Wishes for You</h2>
+            <div className="message-card">
+              <p>✨ May your smile always stay this bright.</p>
+              <p>💖 May life give you peace, success, and endless happiness May every dream you have slowly turn into reality.</p>
+            
+              <p>🌸Happy Birthday to the most special girl in my life 🥰🩶</p>
+              <p>💖Every moment with you feels like something I never want to lose ❣️</p>
+              <p>🎂I am grateful for your smile, your care, your madness, and even your stubbornness❤️</p>
+              <p>✨I just want to keep making memories with you 🥰</p>
+              <p>🌸Today is your day, and I hope you feel loved every second of it🩶😉</p>
+            </div>
           </div>
         </div>
 
