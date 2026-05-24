@@ -1,4 +1,4 @@
-﻿﻿export function initBirthdaySite() {
+﻿﻿﻿﻿export function initBirthdaySite() {
 /* =========================
    DOM ELEMENTS
 ========================= */
@@ -1077,28 +1077,64 @@ function closeMusic() {
 const songs = [
   {
     title: "Aurora",
-    url: "/Aurora.mpeg"
+    artist: "Runn",
+    url: "/Aurora.mpeg",
+    image: "/first_music_img.jpeg",
+    glow: {
+      primary: "144, 144, 144",
+      secondary: "22, 22, 22",
+      highlight: "232, 232, 232",
+      core: "96, 96, 96",
+    },
   },
   {
     title: "Bairan",
-    url: "/Bairan.mpeg"
+    artist: "Amit Saini Rohtakiya",
+    url: "/Bairan.mpeg",
+    image: "/second_music_img.jpeg",
+    glow: {
+      primary: "255, 255, 255",
+      secondary: "214, 214, 214",
+      highlight: "255, 255, 255",
+      core: "248, 248, 248",
+    },
   },
   {
     title: "New West",
-    url: "/New west Those eyes.mpeg"
+    artist: "Those Eyes",
+    url: "/New west Those eyes.mpeg",
+    image: "/third_music_img.jpeg",
+    glow: {
+      primary: "84, 138, 255",
+      secondary: "255, 72, 138",
+      highlight: "214, 232, 255",
+      core: "129, 168, 255",
+    },
   },
   {
     title: "Runaway",
-    url: "/Runawaympeg"
+    artist: "Aurora",
+    url: "/Runawaympeg",
+    image: "/fouth_music_img.jpeg",
+    glow: {
+      primary: "255, 207, 64",
+      secondary: "214, 26, 26",
+      highlight: "255, 238, 165",
+      core: "255, 176, 36",
+    },
   },
   {
     title: "Main khoo gya",
-    url: "/Main khoo gya.mpeg"
+    artist: "Anuv Jain",
+    url: "/Main khoo gya.mpeg",
+    image: "/fifth_music_img.jpeg",
+    glow: {
+      primary: "114, 196, 116",
+      secondary: "230, 255, 230",
+      highlight: "255, 255, 255",
+      core: "158, 226, 160",
+    },
   },
-  // {
-  //   title: "Song 5",
-  //   url: "5.mp3"
-  // }
 ];
 
 let audioPlayer = new Audio();
@@ -1110,6 +1146,8 @@ let recordingAudioState = null;
 let suppressBackgroundResume = false;
 
 const songTitle = document.getElementById("songTitle");
+const musicArt = document.getElementById("musicArt");
+const musicArtWrap = document.querySelector(".music-player__art-wrap");
 const songStatus = document.getElementById("songStatus");
 const playBtn = document.getElementById("playBtn");
 const nextBtn = document.getElementById("nextBtn");
@@ -1122,6 +1160,7 @@ const musicTrackList = document.getElementById("musicTrackList");
 const musicEmojiLayer = document.getElementById("musicEmojiLayer");
 const musicVolume = document.getElementById("musicVolume");
 const musicVolumeValue = document.getElementById("musicVolumeValue");
+const musicProgressBar = document.getElementById("musicProgressBar");
 
 function formatTrackTime(seconds) {
   if (!Number.isFinite(seconds) || seconds < 0) {
@@ -1147,31 +1186,58 @@ function renderMusicQueue() {
   `).join("");
 }
 
+let isDraggingProgress = false;
+
 function updateMusicProgress() {
-  if (musicProgressFill) {
+  if (isDraggingProgress) return;
+
+  if (musicProgressFill || musicProgressBar || musicCurrentTime || musicDuration) {
     const duration = audioPlayer.duration;
-    const progress = Number.isFinite(duration) && duration > 0
-      ? Math.min(100, (audioPlayer.currentTime / duration) * 100)
-      : 0;
-    musicProgressFill.style.width = `${progress}%`;
-  }
-
-  if (musicCurrentTime) {
-    musicCurrentTime.textContent = formatTrackTime(audioPlayer.currentTime);
-  }
-
-  if (musicDuration) {
-    musicDuration.textContent = formatTrackTime(audioPlayer.duration);
+    const currentTime = audioPlayer.currentTime;
+    
+    if (Number.isFinite(duration) && duration > 0) {
+      const progress = Math.min(100, (currentTime / duration) * 100);
+      if (musicProgressFill) musicProgressFill.style.width = `${progress}%`;
+      if (musicProgressBar) musicProgressBar.value = progress;
+      
+      if (musicCurrentTime) musicCurrentTime.textContent = formatTrackTime(currentTime);
+      if (musicDuration) {
+        const remaining = duration - currentTime;
+        musicDuration.textContent = "-" + formatTrackTime(remaining > 0 ? remaining : 0);
+      }
+    } else {
+      if (musicProgressFill) musicProgressFill.style.width = "0%";
+      if (musicProgressBar) musicProgressBar.value = 0;
+      if (musicCurrentTime) musicCurrentTime.textContent = "0:00";
+      if (musicDuration) musicDuration.textContent = "0:00";
+    }
   }
 }
 
 function updateMusicUI() {
-  if (!songTitle || !songStatus || !playBtn || !playlistCount) return;
-  songTitle.textContent = songs[currentSong].title;
-  playlistCount.textContent = `${currentSong + 1} / ${songs.length}`;
-  playBtn.textContent = isPlaying ? "\u{23F8}" : "\u{25B6}";
-  playBtn.setAttribute("aria-label", isPlaying ? "Pause song" : "Play song");
-  songStatus.textContent = isPlaying ? "Now Playing" : "Paused";
+  const currentTrack = songs[currentSong];
+  if (songTitle) songTitle.textContent = songs[currentSong].title;
+  if (musicArt) {
+    musicArt.src = currentTrack.image || "/music_img.png";
+    musicArt.alt = `${currentTrack.title} cover art`;
+  }
+  if (musicArtWrap) {
+    const glow = currentTrack.glow || songs[0].glow;
+    musicArtWrap.style.setProperty("--music-glow-primary", glow.primary);
+    musicArtWrap.style.setProperty("--music-glow-secondary", glow.secondary);
+    musicArtWrap.style.setProperty("--music-glow-highlight", glow.highlight);
+    musicArtWrap.style.setProperty("--music-glow-core", glow.core);
+  }
+  const songArtist = document.getElementById("songArtist");
+  if (songArtist) songArtist.textContent = currentTrack.artist || "MJ's Selection";
+  
+  if (playlistCount) playlistCount.textContent = `${currentSong + 1} / ${songs.length}`;
+  if (playBtn) {
+    playBtn.textContent = isPlaying ? "\u{23F8}" : "\u{25B6}";
+    playBtn.setAttribute("aria-label", isPlaying ? "Pause song" : "Play song");
+  }
+  if (songStatus) songStatus.textContent = isPlaying ? "Now Playing" : "Paused";
+  
   musicPopup?.classList.toggle("is-playing", isPlaying);
   renderMusicQueue();
   updateMusicProgress();
@@ -1210,20 +1276,16 @@ function spawnMusicEmoji() {
 }
 
 function startMusicEmojiFloat() {
-  if (!musicEmojiLayer || prefersReducedMotion) {
-    return;
-  }
-
-  stopMusicEmojiFloat();
-  spawnMusicEmoji();
-  spawnMusicEmoji();
-  musicEmojiIntervalId = setInterval(spawnMusicEmoji, 520);
+  return;
 }
 
 function stopMusicEmojiFloat() {
   if (musicEmojiIntervalId) {
     clearInterval(musicEmojiIntervalId);
     musicEmojiIntervalId = undefined;
+  }
+  if (musicEmojiLayer) {
+    musicEmojiLayer.innerHTML = "";
   }
 }
 
@@ -1398,7 +1460,45 @@ if (musicVolume) {
   });
 }
 
-updateMusicUI();
+if (musicProgressBar) {
+  const startDrag = () => {
+    isDraggingProgress = true;
+  };
+  const stopDrag = () => {
+    if (isDraggingProgress) {
+      applySeekFromBar();
+    }
+    isDraggingProgress = false;
+  };
+  const applySeekFromBar = () => {
+    if (!Number.isFinite(audioPlayer.duration) || audioPlayer.duration <= 0) {
+      return;
+    }
+    const seekTime = (Number(musicProgressBar.value) / 100) * audioPlayer.duration;
+    audioPlayer.currentTime = seekTime;
+  };
+
+  musicProgressBar.addEventListener("pointerdown", startDrag);
+  musicProgressBar.addEventListener("pointerup", stopDrag);
+  musicProgressBar.addEventListener("pointercancel", stopDrag);
+  musicProgressBar.addEventListener("change", stopDrag);
+  window.addEventListener("blur", stopDrag);
+
+  musicProgressBar.addEventListener("input", () => {
+    applySeekFromBar();
+    if (musicProgressFill) {
+      musicProgressFill.style.width = `${musicProgressBar.value}%`;
+    }
+    if (audioPlayer.duration && musicCurrentTime) {
+      const seekTime = (musicProgressBar.value / 100) * audioPlayer.duration;
+      musicCurrentTime.textContent = formatTrackTime(seekTime);
+      const remaining = audioPlayer.duration - seekTime;
+      if (musicDuration) musicDuration.textContent = "-" + formatTrackTime(remaining > 0 ? remaining : 0);
+    }
+  });
+}
+
+loadSong(currentSong, false);
 
 /* =========================
    ABOUT YOU POPUP

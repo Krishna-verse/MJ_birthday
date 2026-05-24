@@ -33,6 +33,13 @@ const tools = [
     description: 'Choose something from your device.',
     icon: '⬆',
   },
+  {
+    id: 'preview',
+    label: 'Preview',
+    title: 'Review your notes',
+    description: 'See everything you have prepared.',
+    icon: '👀',
+  }
 ];
 
 const uid = () =>
@@ -224,12 +231,14 @@ export default function ThankYouStudio({ open, onClose, userEmail }) {
   const [cameraMessage, setCameraMessage] = useState('Open the camera when you are ready.');
   const [recordingState, setRecordingState] = useState('idle');
   const [recordingTime, setRecordingTime] = useState(0);
+  const [isFlashing, setIsFlashing] = useState(false);
 
   const cameraRef = useRef(null);
   const streamRef = useRef(null);
   const recorderRef = useRef(null);
   const chunksRef = useRef([]);
   const recordTimerRef = useRef(null);
+  const cameraFlashTimerRef = useRef(null);
   const attachmentsRef = useRef([]);
   const selectedPhotoFilter = getPhotoFilter(photoFilterId);
 
@@ -273,6 +282,9 @@ export default function ThankYouStudio({ open, onClose, userEmail }) {
     return () => {
       stopCamera();
       stopRecording(false);
+      if (cameraFlashTimerRef.current) {
+        clearTimeout(cameraFlashTimerRef.current);
+      }
       attachmentsRef.current.forEach((item) => URL.revokeObjectURL(item.previewUrl));
     };
   }, []);
@@ -284,6 +296,68 @@ export default function ThankYouStudio({ open, onClose, userEmail }) {
     }
   }
 
+  function clearCameraFlashTimer() {
+    if (cameraFlashTimerRef.current) {
+      clearTimeout(cameraFlashTimerRef.current);
+      cameraFlashTimerRef.current = null;
+    }
+  }
+
+  function playCameraCaptureSound() {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) {
+      return;
+    }
+
+    try {
+      const context = new AudioContextClass();
+      const gain = context.createGain();
+      gain.gain.setValueAtTime(0.0001, context.currentTime);
+      gain.connect(context.destination);
+
+      const clickOne = context.createOscillator();
+      clickOne.type = 'triangle';
+      clickOne.frequency.setValueAtTime(1360, context.currentTime);
+      clickOne.frequency.exponentialRampToValueAtTime(260, context.currentTime + 0.07);
+      clickOne.connect(gain);
+
+      const clickTwo = context.createOscillator();
+      clickTwo.type = 'square';
+      clickTwo.frequency.setValueAtTime(760, context.currentTime + 0.05);
+      clickTwo.frequency.exponentialRampToValueAtTime(180, context.currentTime + 0.12);
+      clickTwo.connect(gain);
+
+      gain.gain.exponentialRampToValueAtTime(0.28, context.currentTime + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.08, context.currentTime + 0.06);
+      gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.14);
+
+      clickOne.start(context.currentTime);
+      clickOne.stop(context.currentTime + 0.08);
+      clickTwo.start(context.currentTime + 0.045);
+      clickTwo.stop(context.currentTime + 0.13);
+
+      window.setTimeout(() => {
+        context.close().catch(() => {});
+      }, 220);
+    } catch {
+      // Keep capture working even if audio feedback fails.
+    }
+  }
+
+  function triggerCameraFeedback(duration = 520) {
+    playCameraCaptureSound();
+    setIsFlashing(true);
+    clearCameraFlashTimer();
+    cameraFlashTimerRef.current = window.setTimeout(() => {
+      setIsFlashing(false);
+      cameraFlashTimerRef.current = null;
+    }, duration);
+  }
+
   function stopCamera() {
     const stream = streamRef.current;
     if (stream) {
@@ -293,6 +367,8 @@ export default function ThankYouStudio({ open, onClose, userEmail }) {
     if (cameraRef.current) {
       cameraRef.current.srcObject = null;
     }
+    clearCameraFlashTimer();
+    setIsFlashing(false);
     setCameraReady(false);
   }
 
@@ -302,13 +378,22 @@ export default function ThankYouStudio({ open, onClose, userEmail }) {
     
     if (recorder && recorder.state !== 'inactive') {
       recorder.stop();
-      if (mode === 'video') playCaptureSound();
     }
 
     if (showHint) {
       setCameraMessage('Recording stopped. You can attach another clip or send now.');
     }
   }
+
+  const downloadAttachment = (item) => {
+    const link = document.createElement('a');
+    link.href = item.previewUrl;
+    link.download = item.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setStatus(`Downloading ${item.name}...`);
+  };
 
   function addAttachment(file, kind) {
     const item = createAttachment(file, kind);
@@ -369,7 +454,8 @@ export default function ThankYouStudio({ open, onClose, userEmail }) {
       return;
     }
 
-        playCaptureSound();
+    triggerCameraFeedback(480);
+
     const video = cameraRef.current;
     const canvas = document.createElement('canvas');
     canvas.width = video.videoWidth || 1280;
@@ -495,6 +581,7 @@ export default function ThankYouStudio({ open, onClose, userEmail }) {
       const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
 
       pauseBackgroundAudioForRecording();
+      triggerCameraFeedback(900);
       chunksRef.current = [];
       recorderRef.current = recorder;
       setRecordingState('video');
@@ -706,9 +793,73 @@ export default function ThankYouStudio({ open, onClose, userEmail }) {
       >
         {sendSuccess ? (
           <div className="thank-you-success" role="status" aria-live="polite">
+            <div className="thank-you-success__confetti" aria-hidden="true">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <span
+                  key={i}
+                  className="thank-you-success__confetti-piece"
+                  style={{
+                    '--left': `${Math.random() * 100}%`,
+                    '--rotate': `${Math.random() * 360}deg`,
+                    '--duration': `${2 + Math.random() * 3}s`,
+                    '--delay': `${Math.random() * 2}s`,
+                  }}
+                />
+              ))}
+            </div>
+
+            <div className="thank-you-success__glow thank-you-success__glow--one" />
+            <div className="thank-you-success__glow thank-you-success__glow--two" />
+
+            <div className="thank-you-success__card">
+              <div className="thank-you-success__badge">Sent to MJ</div>
+              <div className="thank-you-success__mark">
+                <span>✓</span>
+              </div>
+              <h2>Note Delivered!</h2>
+              <p>{sendSuccess.sentence}</p>
+
+              <div className="thank-you-success__items">
+                {sendSuccess.items.map((item, idx) => (
+                  <div className="thank-you-success__item" key={item.kind} style={{ '--item-index': idx }}>
+                    <small>{item.count} {item.label}{item.count !== 1 ? 's' : ''}</small>
+                    <strong>{item.short}</strong>
+                  </div>
+                ))}
+              </div>
+
+              <div className="thank-you-success__actions">
+                <button
+                  type="button"
+                  className="thank-you-success__button thank-you-success__button--ghost"
+                  onClick={() => setSendSuccess(null)}
+                >
+                  Send another
+                </button>
+                <button
+                  type="button"
+                  className="thank-you-success__button thank-you-success__button--solid"
+                  onClick={onClose}
+                >
+                  Close studio
+                </button>
+              </div>
+            </div>
           </div>
         ) : (
           <>
+        <div className="thank-you-modal__birthday-watermark" aria-hidden="true">
+          <div className="birthday-finale__panel">
+            <h2 className="birthday-finale__title">
+              <span>Happy</span>
+              <span>Birthday</span>
+            </h2>
+            <div className="birthday-finale__name-row">
+              <span className="birthday-finale__name">Samruddhi</span>
+              <span className="birthday-finale__cake">🎂</span>
+            </div>
+          </div>
+        </div>
         <div className="thank-you-modal__header">
           <h2>Leave a note, voice, and more for me.</h2>
           <button className="thank-you-modal__close" type="button" onClick={onClose} aria-label="Close">
@@ -717,13 +868,18 @@ export default function ThankYouStudio({ open, onClose, userEmail }) {
         </div>
 
         <div className="thank-you-modal__toolbar">
-          {tools.map((tool) => (
+          {tools.filter(t => t.id !== 'preview' || attachments.length > 0).map((tool) => (
             <button
               key={tool.id}
               type="button"
               className={`thank-you-chip ${activeTool === tool.id ? 'is-active' : ''}`}
               onClick={() => setActiveTool(tool.id)}
             >
+              {tool.id === 'preview' && attachments.length > 0 && (
+                <span className="thank-you-chip__badge">
+                  {attachments.length}
+                </span>
+              )}
               <span className="thank-you-chip__icon">{tool.icon}</span>
               <span>{tool.label}</span>
             </button>
@@ -750,7 +906,6 @@ export default function ThankYouStudio({ open, onClose, userEmail }) {
             {activeTool === 'voice' ? (
               <div className="thank-you-compose__voice">
                 <label className="thank-you-label">Voice note</label>
-                <p className="thank-you-compose__voice-copy">{cameraMessage}</p>
                 {recordingState === 'voice' ? (
                   <div className="thank-you-voice-orbit" aria-hidden="true">
                     <span className="thank-you-voice-orbit__ring" />
@@ -834,7 +989,7 @@ export default function ThankYouStudio({ open, onClose, userEmail }) {
                   </div>
                 ) : null}
 
-                <div className="thank-you-camera">
+                <div className={`thank-you-camera ${isFlashing ? 'is-flashing' : ''} ${recordingState === 'video' ? 'is-recording' : ''}`}>
                   <video
                     ref={cameraRef}
                     className="thank-you-camera__view"
@@ -890,39 +1045,125 @@ export default function ThankYouStudio({ open, onClose, userEmail }) {
               </div>
             ) : null}
 
-            <div className="thank-you-attachments">
-              {attachments.length ? (
-                attachments.map((item) => (
-                  <article className={`thank-you-attachment ${lastCapturedId === item.id ? 'is-captured' : ''}`} key={item.id}>
-                    <button
-                      type="button"
-                      className="thank-you-attachment__remove"
-                      onClick={() => removeAttachment(item.id)}
-                      aria-label={`Remove ${item.name}`}
-                    >
-                      ×
-                    </button>
-
-                    {item.kind === 'image' ? (
-                      <img src={item.previewUrl} alt={item.name} className="thank-you-attachment__preview" />
-                    ) : item.kind === 'video' ? (
-                      <video src={item.previewUrl} className="thank-you-attachment__preview" controls playsInline />
-                    ) : item.kind === 'audio' ? (
-                      <VoiceAttachmentPlayer src={item.previewUrl} name={item.name} />
-                    ) : (
-                      <div className="thank-you-attachment__file">File</div>
-                    )}
-
-                    {item.kind !== 'audio' ? (
-                      <div className="thank-you-attachment__meta">
-                        <span>{item.kind}</span>
-                        <strong>{item.name}</strong>
+            {activeTool === 'preview' ? (
+              <div className="thank-you-preview-mode">
+                <label className="thank-you-label">Review your attachments</label>
+                <div className="thank-you-attachments thank-you-attachments--preview">
+                  {attachments.map((item) => (
+                    <article className="thank-you-attachment thank-you-attachment--large" key={item.id}>
+                      <div className="thank-you-attachment__actions-overlay">
+                        <button
+                          type="button"
+                          className="thank-you-mini-btn thank-you-mini-btn--remove"
+                          onClick={() => removeAttachment(item.id)}
+                          title="Remove"
+                        >
+                          ×
+                        </button>
                       </div>
-                    ) : null}
-                  </article>
-                ))
-              ) : null}
-            </div>
+
+                      <div className="thank-you-attachment__content">
+                        {item.kind === 'image' ? (
+                          <img src={item.previewUrl} alt={item.name} className="thank-you-attachment__preview" />
+                        ) : item.kind === 'video' ? (
+                          <video src={item.previewUrl} className="thank-you-attachment__preview" controls playsInline />
+                        ) : item.kind === 'audio' ? (
+                          <VoiceAttachmentPlayer src={item.previewUrl} name={item.name} />
+                        ) : (
+                          <div className="thank-you-attachment__file">File</div>
+                        )}
+                      </div>
+
+                      <div className="thank-you-attachment__footer-ops">
+                        <div className="thank-you-attachment__meta">
+                          <span>{item.kind}</span>
+                          <strong>{item.name}</strong>
+                        </div>
+                        <div className="thank-you-attachment__ops-btns">
+                          <button 
+                            className="thank-you-op-btn thank-you-op-btn--download" 
+                            onClick={() => downloadAttachment(item)}
+                          >
+                            Download
+                          </button>
+                          <button 
+                            className="thank-you-op-btn thank-you-op-btn--send" 
+                            onClick={handleSend}
+                            disabled={uploading}
+                          >
+                            Send
+                          </button>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+                <button className="thank-you-secondary-btn thank-you-preview-back" onClick={() => setActiveTool('text')}>
+                  ← Back to editor
+                </button>
+              </div>
+            ) : (
+              <div className="thank-you-attachments">
+                {attachments
+                  .filter(item => {
+                    if (activeTool === 'voice') return item.kind === 'audio';
+                    if (activeTool === 'camera') return item.kind === 'image' || item.kind === 'video';
+                    if (activeTool === 'upload') return true;
+                    return false;
+                  })
+                  .map((item) => (
+                    <article 
+                      className={`thank-you-attachment ${lastCapturedId === item.id ? 'is-captured' : ''}`} 
+                      key={item.id}
+                    >
+                      <button
+                        type="button"
+                        className="thank-you-attachment__remove"
+                        onClick={() => removeAttachment(item.id)}
+                        aria-label={`Remove ${item.name}`}
+                      >
+                        ×
+                      </button>
+
+                      <div className="thank-you-attachment__content">
+                        {item.kind === 'image' ? (
+                          <img src={item.previewUrl} alt={item.name} className="thank-you-attachment__preview" />
+                        ) : item.kind === 'video' ? (
+                          <video src={item.previewUrl} className="thank-you-attachment__preview" controls playsInline />
+                        ) : item.kind === 'audio' ? (
+                          <VoiceAttachmentPlayer src={item.previewUrl} name={item.name} />
+                        ) : (
+                          <div className="thank-you-attachment__file">File</div>
+                        )}
+                      </div>
+
+                      <div className="thank-you-attachment__footer-ops">
+                        <div className="thank-you-attachment__meta">
+                          <span>{item.kind}</span>
+                          <strong>{item.name}</strong>
+                        </div>
+                        <div className="thank-you-attachment__ops-btns">
+                          <button 
+                            type="button"
+                            className="thank-you-op-btn thank-you-op-btn--download" 
+                            onClick={() => downloadAttachment(item)}
+                          >
+                            Save
+                          </button>
+                          <button 
+                            type="button"
+                            className="thank-you-op-btn thank-you-op-btn--send" 
+                            onClick={handleSend}
+                            disabled={uploading}
+                          >
+                            Send
+                          </button>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+              </div>
+            )}
           </section>
         </div>
 

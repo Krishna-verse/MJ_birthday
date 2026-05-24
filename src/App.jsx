@@ -1,4 +1,4 @@
-﻿﻿import { useEffect, useRef, useState } from 'react';
+﻿﻿﻿﻿import { useEffect, useRef, useState } from 'react';
 import { supabase } from './lib/supabase';
 import { initBirthdaySite } from './site';
 import AdminDashboard from './AdminDashboard';
@@ -22,6 +22,11 @@ const PIC_SLIDE_DIRECTIONS = ['left', 'right', 'up', 'down'];
 
 const getRandomPicSlideDirection = () =>
   PIC_SLIDE_DIRECTIONS[Math.floor(Math.random() * PIC_SLIDE_DIRECTIONS.length)];
+
+const isAboutPrivateImage = (path = '') => {
+  const fileName = path.split('/').pop() || '';
+  return /^sam_pic(?:\.[^.]+)?$/i.test(fileName);
+};
 
 function PrivatePicCanvas({ pic, direction, label }) {
   const canvasRef = useRef(null);
@@ -606,6 +611,8 @@ function BirthdayExperience({
   const cleanupRef = useRef(null);
   const thankYouRevealRef = useRef(null);
   const [thankYouFabVisible, setThankYouFabVisible] = useState(false);
+  const aboutPrivateImage = privatePics.find((pic) => isAboutPrivateImage(pic.path));
+  const aboutBackgroundImage = aboutPrivateImage?.url || '/sam_pic.jpeg';
 
   const openThankYouStudio = () => {
     setThankYouOpen(true);
@@ -1169,27 +1176,41 @@ function BirthdayExperience({
           <span className="popup-close" onClick={() => window.closeMusic?.()}>&times;</span>
 
           <div className="music-player">
-            <div className="music-player__emoji-layer" id="musicEmojiLayer" aria-hidden="true" />
-            <div className="music-player__header">
-              <h2>Playlist for MJ</h2>
-              <p>Soft songs, birthday glow, and a little extra drama.</p>
-            </div>
-
-            <div className="music-player__stage">
-              <div className="music-player__disc" aria-hidden="true">
-                <span className="music-player__disc-core" />
-              </div>
-
-              <div className="music-player__track">
-                <span className="music-player__status" id="songStatus">Ready to play</span>
-                <h3 id="songTitle">Song 1</h3>
-                <span className="music-player__count" id="playlistCount">1 / 3</span>
+            <div className="music-player__art-section">
+              <div className="music-player__art-wrap">
+                <span className="music-player__halo" aria-hidden="true" />
+                <img
+                  id="musicArt"
+                  src="/music_img.png"
+                  className="music-player__art"
+                  alt="Album art"
+                  onError={(event) => {
+                    event.currentTarget.onerror = null;
+                    event.currentTarget.src = '/mj_pic.png';
+                  }}
+                />
               </div>
             </div>
 
-            <div className="music-player__progress" aria-hidden="true">
-              <div className="music-player__progress-bar">
-                <span id="musicProgressFill" />
+            <div className="music-player__info">
+              <h3 id="songTitle">Loading...</h3>
+              <p id="songArtist" className="music-player__artist">MJ's Selection</p>
+            </div>
+
+            <div className="music-player__progress">
+              <div className="music-player__progress-container">
+                <input 
+                  id="musicProgressBar" 
+                  type="range" 
+                  min="0" 
+                  max="100" 
+                  step="0.1" 
+                  defaultValue="0" 
+                  className="music-player__range" 
+                />
+                <div className="music-player__progress-bar">
+                  <span id="musicProgressFill" />
+                </div>
               </div>
               <div className="music-player__time">
                 <span id="musicCurrentTime">0:00</span>
@@ -1197,26 +1218,30 @@ function BirthdayExperience({
               </div>
             </div>
 
+            <div className="music-controls" aria-label="Music controls">
+              <button className="music-control-btn" id="prevBtn" type="button" aria-label="Previous song">⏮</button>
+              <button className="music-control-btn music-control-btn--play" id="playBtn" type="button" aria-label="Play or pause">▶</button>
+              <button className="music-control-btn" id="nextBtn" type="button" aria-label="Next song">⏭</button>
+            </div>
+
             <div className="music-player__volume">
               <span className="music-player__volume-icon" aria-hidden="true">🔊</span>
-              <label htmlFor="musicVolume">Volume</label>
-              <input id="musicVolume" type="range" min="0" max="100" defaultValue="85" aria-label="Music volume" />
-              <span id="musicVolumeValue">85%</span>
+              <input 
+                id="musicVolume" 
+                type="range" 
+                min="0" 
+                max="100" 
+                defaultValue="85" 
+                className="music-player__volume-slider" 
+              />
+              <span id="musicVolumeValue" className="music-player__volume-text">85%</span>
             </div>
-
-            <div className="music-controls" aria-label="Music controls">
-              <button className="music-control-btn" id="prevBtn" type="button" aria-label="Previous song">
-                ⏮
-              </button>
-              <button className="music-control-btn music-control-btn--play" id="playBtn" type="button" aria-label="Play or pause">
-                ▶
-              </button>
-              <button className="music-control-btn" id="nextBtn" type="button" aria-label="Next song">
-                ⏭
-              </button>
-            </div>
-
-            <div className="music-player__queue" id="musicTrackList" aria-label="Playlist songs" />
+            
+            {/* Hidden elements to maintain compatibility with site.js logic */}
+            <div id="musicEmojiLayer" hidden aria-hidden="true" />
+            <div id="songStatus" hidden aria-hidden="true" />
+            <div id="playlistCount" hidden aria-hidden="true" />
+            <div id="musicTrackList" hidden aria-hidden="true" />
           </div>
         </div>
 
@@ -1226,7 +1251,7 @@ function BirthdayExperience({
           <div
             className="about-image-wrap"
             id="aboutImageWrap"
-            style={{ backgroundImage: "url('/sam_pic.jpeg')" }}
+            style={{ backgroundImage: `url("${aboutBackgroundImage}")` }}
           >
             <div className="about-image-overlay" />
           </div>

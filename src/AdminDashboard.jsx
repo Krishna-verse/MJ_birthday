@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from './lib/supabase';
 
 const STORAGE_BUCKET = import.meta.env.VITE_SUPABASE_THANKYOU_BUCKET || 'thank-you-uploads';
@@ -121,6 +121,176 @@ async function fetchSubmissions() {
   return data || [];
 }
 
+function downloadBlobUrl(blobUrl, downloadName) {
+  const link = document.createElement('a');
+  link.href = blobUrl;
+  link.download = downloadName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function ImagePreviewAsset({ item, signedUrl, downloadName }) {
+  const canvasRef = useRef(null);
+  const [objectUrl, setObjectUrl] = useState('');
+  const [downloading, setDownloading] = useState(false);
+
+  useEffect(() => {
+    let ignore = false;
+    let nextObjectUrl = '';
+
+    const loadImageBlob = async () => {
+      if (!signedUrl) {
+        setObjectUrl('');
+        return;
+      }
+
+      try {
+        const response = await fetch(signedUrl, { cache: 'no-store' });
+        if (!response.ok) {
+          throw new Error('Could not load image preview.');
+        }
+
+        const blob = await response.blob();
+        nextObjectUrl = URL.createObjectURL(blob);
+
+        if (!ignore) {
+          setObjectUrl(nextObjectUrl);
+        }
+      } catch {
+        if (!ignore) {
+          setObjectUrl('');
+        }
+      }
+    };
+
+    loadImageBlob().catch(() => {
+      if (!ignore) {
+        setObjectUrl('');
+      }
+    });
+
+    return () => {
+      ignore = true;
+      if (nextObjectUrl) {
+        URL.revokeObjectURL(nextObjectUrl);
+      }
+    };
+  }, [signedUrl]);
+
+  useEffect(() => {
+    if (!objectUrl) {
+      return () => {};
+    }
+
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      return () => {};
+    }
+
+    const image = new Image();
+    let ignore = false;
+
+    const drawImage = () => {
+      if (ignore || !canvas || !image.naturalWidth || !image.naturalHeight) {
+        return;
+      }
+
+      const rect = canvas.getBoundingClientRect();
+      const ratio = window.devicePixelRatio || 1;
+      const width = Math.max(1, Math.round(rect.width * ratio));
+      const height = Math.max(1, Math.round(rect.height * ratio));
+
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+
+      const context = canvas.getContext('2d');
+      if (!context) {
+        return;
+      }
+
+      context.clearRect(0, 0, width, height);
+      context.fillStyle = 'rgba(10, 10, 12, 0.92)';
+      context.fillRect(0, 0, width, height);
+
+      const imageScale = Math.min(width / image.naturalWidth, height / image.naturalHeight);
+      const drawWidth = image.naturalWidth * imageScale;
+      const drawHeight = image.naturalHeight * imageScale;
+      const drawX = (width - drawWidth) / 2;
+      const drawY = (height - drawHeight) / 2;
+
+      context.imageSmoothingEnabled = true;
+      context.imageSmoothingQuality = 'high';
+      context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+    };
+
+    image.onload = drawImage;
+    image.src = objectUrl;
+
+    const observer = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(drawImage)
+      : null;
+    observer?.observe(canvas);
+    window.addEventListener('resize', drawImage);
+
+    return () => {
+      ignore = true;
+      observer?.disconnect();
+      window.removeEventListener('resize', drawImage);
+    };
+  }, [objectUrl]);
+
+  const handleDownload = async () => {
+    if (!signedUrl || downloading) {
+      return;
+    }
+
+    setDownloading(true);
+    try {
+      const response = await fetch(signedUrl, { cache: 'no-store' });
+      if (!response.ok) {
+        throw new Error('Could not download image.');
+      }
+
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      downloadBlobUrl(blobUrl, downloadName);
+      window.setTimeout(() => URL.revokeObjectURL(blobUrl), 0);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  return (
+    <div className="admin-asset admin-asset--media">
+      <div
+        className="admin-asset__canvas-wrap"
+        onContextMenu={(event) => event.preventDefault()}
+        onDragStart={(event) => event.preventDefault()}
+      >
+        <canvas
+          ref={canvasRef}
+          className="admin-asset__media admin-asset__media--canvas"
+          aria-label={item.name || 'Uploaded image'}
+          role="img"
+        />
+      </div>
+      <button
+        type="button"
+        className="admin-asset__download admin-asset__download--icon"
+        onClick={handleDownload}
+        aria-label={`Download ${downloadName}`}
+        title={downloading ? 'Downloading...' : `Download ${downloadName}`}
+        disabled={downloading}
+      >
+        ⭳
+      </button>
+    </div>
+  );
+}
+
 function SubmissionAsset({ item, signedUrl }) {
   const downloadName = getDownloadName(item);
 
@@ -136,12 +306,7 @@ function SubmissionAsset({ item, signedUrl }) {
 
   if (isPreviewableImage(item.type, item.path)) {
     return (
-      <div className="admin-asset admin-asset--media">
-        <img className="admin-asset__media" src={signedUrl} alt={item.name || 'Uploaded image'} />
-        <a className="admin-asset__download" href={signedUrl} download={downloadName}>
-          Download
-        </a>
-      </div>
+      <ImagePreviewAsset item={item} signedUrl={signedUrl} downloadName={downloadName} />
     );
   }
 
