@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿import { useEffect, useRef, useState } from 'react';
+﻿﻿﻿﻿﻿﻿﻿﻿import { useEffect, useRef, useState } from 'react';
 import { supabase } from './lib/supabase';
 import { initBirthdaySite } from './site';
 import AdminDashboard from './AdminDashboard';
@@ -476,7 +476,7 @@ function ChatWidget() {
         onClick={() => setOpen((value) => !value)}
       >
         <span className="chat-toggle__icon" aria-hidden="true">
-          {open ? '×' : '💬'}
+          {open ? <i className="fa-solid fa-xmark"></i> : '💬'}
         </span>
         {!open ? <span className="chat-toggle__pulse" aria-hidden="true" /> : null}
       </button>
@@ -1353,7 +1353,7 @@ function BirthdayExperience({
 
       <div id="popupLayer" className="popup-layer">
         <div id="partyPopup" className="popup-box wide-popup">
-          <span className="popup-close" onClick={() => window.closeParty?.()}>&times;</span>
+          <span className="popup-close" onClick={() => window.closeParty?.()}><i className="fa-solid fa-xmark"></i></span>
           <div className="video-wrapper">
             <video id="partyVideo" playsInline controls />
           </div>
@@ -1363,7 +1363,7 @@ function BirthdayExperience({
         </div>
 
         <div id="wishPopup" className="popup-box wish-popup">
-          <span className="popup-close" onClick={() => window.closeWish?.()}>&times;</span>
+          <span className="popup-close" onClick={() => window.closeWish?.()}><i className="fa-solid fa-xmark"></i></span>
           <div className="wish-image-wrap" id="wishImageWrap">
             <div className="wish-image-overlay" />
           </div>
@@ -1383,7 +1383,7 @@ function BirthdayExperience({
         </div>
 
         <div id="rizzPopup" className="popup-box rizz-popup">
-          <span className="popup-close" onClick={() => window.closeRizz?.()}>&times;</span>
+          <span className="popup-close" onClick={() => window.closeRizz?.()}><i className="fa-solid fa-xmark"></i></span>
           <div className="rizz-image-wrap" id="rizzImageWrap">
             <div className="rizz-image-overlay" />
           </div>
@@ -1399,7 +1399,7 @@ function BirthdayExperience({
         </div>
 
         <div id="musicPopup" className="popup-box music-popup">
-          <span className="popup-close" onClick={() => window.closeMusic?.()}>&times;</span>
+          <span className="popup-close" onClick={() => window.closeMusic?.()}><i className="fa-solid fa-xmark"></i></span>
 
           <div className="music-player">
             <div className="music-player__art-section">
@@ -1472,7 +1472,7 @@ function BirthdayExperience({
         </div>
 
         <div id="aboutPopup" className="popup-box about-popup">
-          <span className="popup-close" onClick={() => window.closeAbout?.()}>&times;</span>
+          <span className="popup-close" onClick={() => window.closeAbout?.()}><i className="fa-solid fa-xmark"></i></span>
 
           <div
             className="about-image-wrap"
@@ -1490,7 +1490,7 @@ function BirthdayExperience({
         </div>
 
         <div id="memoriesPopup" className="popup-box memories-popup">
-          <span className="popup-close" onClick={closeMemoriesAndReset}>&times;</span>
+          <span className="popup-close" onClick={closeMemoriesAndReset}><i className="fa-solid fa-xmark"></i></span>
           <h2>🖤 Our Memories</h2>
           
           <div className="memory-progress-header">
@@ -1600,7 +1600,7 @@ function BirthdayExperience({
         </div>
 
         <div id="picsPopup" className="popup-box pics-popup">
-          <span className="popup-close" onClick={() => window.closePics?.()}>&times;</span>
+          <span className="popup-close" onClick={() => window.closePics?.()}><i className="fa-solid fa-xmark"></i></span>
           <h2>🖼️ Your Pics</h2>
           <p className="pics-subtitle">Your private gallery, one memory at a time.</p>
           <div className="pics-frame">
@@ -1663,8 +1663,7 @@ function BirthdayExperience({
             <button 
               className="fullscreen-video-close" 
               onClick={() => setFullscreenVid(null)}
-            >
-              &times;
+            ><i className="fa-solid fa-xmark"></i>
             </button>
             <div className="fullscreen-video-body">
               <MemoryVideoPlayer 

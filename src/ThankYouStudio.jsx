@@ -812,7 +812,7 @@ export default function ThankYouStudio({ open, onClose, userEmail }) {
             <div className="thank-you-success__glow thank-you-success__glow--two" />
 
             <div className="thank-you-success__card">
-              <div className="thank-you-success__badge">Sent to MJ</div>
+              <div className="thank-you-success__badge">Sent to Krishna</div>
               <div className="thank-you-success__mark">
                 <span>✓</span>
               </div>
@@ -863,7 +863,7 @@ export default function ThankYouStudio({ open, onClose, userEmail }) {
         <div className="thank-you-modal__header">
           <h2>Leave a note, voice, and more for me.</h2>
           <button className="thank-you-modal__close" type="button" onClick={onClose} aria-label="Close">
-            ×
+            <i className="fa-solid fa-xmark"></i>
           </button>
         </div>
 
@@ -1058,7 +1058,7 @@ export default function ThankYouStudio({ open, onClose, userEmail }) {
                           onClick={() => removeAttachment(item.id)}
                           title="Remove"
                         >
-                          ×
+                          <i className="fa-solid fa-xmark"></i>
                         </button>
                       </div>
 
@@ -1122,7 +1122,7 @@ export default function ThankYouStudio({ open, onClose, userEmail }) {
                         onClick={() => removeAttachment(item.id)}
                         aria-label={`Remove ${item.name}`}
                       >
-                        ×
+                        <i className="fa-solid fa-xmark"></i>
                       </button>
 
                       <div className="thank-you-attachment__content">
