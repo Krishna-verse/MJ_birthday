@@ -878,6 +878,45 @@ function BirthdayExperience({
   const [privatePicsLoading, setPrivatePicsLoading] = useState(true);
   const [privatePicsError, setPrivatePicsError] = useState('');
   const cardsTimer = useRef(null);
+
+  const touchStartX = useRef(0);
+
+  const handleTouchStart = (e) => {
+    // Ignore swipes starting on the volume/progress sliders
+    if (e.target.tagName === 'INPUT') {
+      touchStartX.current = 0;
+      return;
+    }
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e) => {
+    if (touchStartX.current === 0) return;
+    
+    const touchEndX = e.changedTouches[0].clientX;
+    const swipeThreshold = 50;
+    const diff = touchStartX.current - touchEndX;
+
+    if (Math.abs(diff) > swipeThreshold) {
+      if (diff > 0 && memoryIndex < memoryData.length - 1) {
+        // Swiped Left -> Next
+        if (activeMediaIndex !== null) {
+          window.dispatchEvent(new CustomEvent('birthday:recording-audio-resume'));
+        }
+        setMemoryIndex(v => v + 1);
+        setActiveMediaIndex(null);
+      } else if (diff < 0 && memoryIndex > 0) {
+        // Swiped Right -> Previous
+        if (activeMediaIndex !== null) {
+          window.dispatchEvent(new CustomEvent('birthday:recording-audio-resume'));
+        }
+        setMemoryIndex(v => v - 1);
+        setActiveMediaIndex(null);
+      }
+    }
+    touchStartX.current = 0;
+  };
+
   const cleanupRef = useRef(null);
   const thankYouRevealRef = useRef(null);
   const [thankYouFabVisible, setThankYouFabVisible] = useState(false);
@@ -1536,7 +1575,11 @@ function BirthdayExperience({
             </div>
           </div>
           
-          <div className="memory-slider">
+          <div 
+            className="memory-slider"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
             {memoryData.map((memory, idx) => (
               <div 
                 key={idx} 
@@ -1600,7 +1643,7 @@ function BirthdayExperience({
                           setActiveMediaIndex(null);
                         }}
                       >
-                        <span>←</span>
+                        <i className="fa-solid fa-left-long"></i>
                       </button>
                     )}
                     {memoryIndex < memoryData.length - 1 && (
@@ -1614,7 +1657,7 @@ function BirthdayExperience({
                           setActiveMediaIndex(null);
                         }}
                       >
-                        <span>→</span>
+                        <i className="fa-solid fa-right-long"></i>
                       </button>
                     )}
                   </div>

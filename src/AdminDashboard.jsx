@@ -435,6 +435,47 @@ function GroupSubmissionCard({ row, signedUrls, onDelete }) {
   );
 }
 
+function DeleteConfirmModal({ open, busy, onCancel, onConfirm }) {
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        onCancel();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, onCancel]);
+
+  if (!open) return null;
+
+  return (
+    <div className="sign-out-modal" role="presentation" onClick={onCancel} style={{ zIndex: 100000 }}>
+      <div
+        className="sign-out-modal__panel"
+        role="dialog"
+        aria-modal="true"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <h2 style={{ fontSize: '1.8rem' }}>Delete submission?</h2>
+        <p style={{ marginBottom: '24px' }}>
+          This will permanently remove the database record and any associated files. This action cannot be undone.
+        </p>
+
+        <div className="sign-out-modal__actions">
+          <button className="sign-out-modal__button sign-out-modal__button--ghost" type="button" onClick={onCancel} disabled={busy}>
+            Cancel
+          </button>
+          <button className="sign-out-modal__button sign-out-modal__button--danger" type="button" onClick={onConfirm} disabled={busy}>
+            {busy ? 'Deleting...' : 'Delete permanently'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminDashboard({ onBackHome }) {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -443,13 +484,20 @@ export default function AdminDashboard({ onBackHome }) {
   const [signedUrls, setSignedUrls] = useState({});
   const query = '';
   const filterMode = 'all';
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [submissionToDelete, setSubmissionToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
-  const handleDeleteSubmission = async (row) => {
-    const confirmMessage = 'Are you sure you want to delete this submission? This will permanently remove the database record and any associated files.';
-    if (!window.confirm(confirmMessage)) {
-      return;
-    }
+  const handleDeleteRequest = (row) => {
+    setSubmissionToDelete(row);
+    setDeleteConfirmOpen(true);
+  };
 
+  const confirmDelete = async () => {
+    if (!submissionToDelete || deleting) return;
+    
+    setDeleting(true);
+    const row = submissionToDelete;
     // Identify which column to use for the deletion filter
     const idColumn = row.id ? 'id' : 'bundle_id';
     const idValue = row.id || row.bundle_id;
@@ -488,9 +536,14 @@ export default function AdminDashboard({ onBackHome }) {
         row.storage_paths?.forEach(path => delete next[path]);
         return next;
       });
+
+      setDeleteConfirmOpen(false);
+      setSubmissionToDelete(null);
     } catch (err) {
       console.error('Delete error:', err);
       setError(err.message || 'Failed to delete the submission.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -677,7 +730,7 @@ export default function AdminDashboard({ onBackHome }) {
                       key={row.id || row.bundle_id}
                       row={row}
                       signedUrls={signedUrls}
-                      onDelete={handleDeleteSubmission}
+                      onDelete={handleDeleteRequest}
                     />
                   ))}
                 </div>
@@ -699,6 +752,13 @@ export default function AdminDashboard({ onBackHome }) {
           </button>
         </div>
       </footer>
+
+      <DeleteConfirmModal 
+        open={deleteConfirmOpen}
+        busy={deleting}
+        onCancel={() => setDeleteConfirmOpen(false)}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

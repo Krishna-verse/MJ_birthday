@@ -7326,8 +7326,9 @@ header p {
 .memory-card__nav {
   margin-top: auto;
   display: flex;
+  justify-content: center;
   padding-top: 18px;
-  gap: 12px;
+  gap: 24px;
 }
 
 .memory-nav-btn {
