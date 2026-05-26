@@ -220,7 +220,7 @@ const memoryData = [
     title: "First Voice Note 🫠",
     description: "Voice note of saying 3 magic words on 9th May 2026 @22:56",
     type: "audio",
-    src: "" // Add your voice note file path here
+    src: "Iloveyou_sam.ogg"
   },
   {
     title: "First Face Pic 😍",
@@ -620,13 +620,38 @@ function MemoryVoicePlayer({ src, onPlay, onPause, onEnded }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [audioUrl, setAudioUrl] = useState(null);
 
   useEffect(() => {
+    let active = true;
+
+    const getSecureUrl = async () => {
+      if (!src) return;
+      try {
+        let finalUrl;
+        if (!src.startsWith('http') && !src.startsWith('/')) {
+          const { data, error } = await supabase.storage.from('private_vid').createSignedUrl(src, 3600);
+          if (error) throw error;
+          finalUrl = data.signedUrl;
+        } else {
+          finalUrl = src;
+        }
+
+        if (active) {
+          setAudioUrl(finalUrl);
+        }
+      } catch (err) {
+        console.error("Audio loading failed", err);
+      }
+    };
+    getSecureUrl();
+
     return () => {
+      active = false;
       // Ensure background music resumes if this component unmounts while playing
       window.dispatchEvent(new CustomEvent('birthday:recording-audio-resume'));
     };
-  }, []);
+  }, [src]);
 
   const formatTime = (time) => {
     const mins = Math.floor(time / 60) || 0;
@@ -637,7 +662,7 @@ function MemoryVoicePlayer({ src, onPlay, onPause, onEnded }) {
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   const togglePlay = () => {
-    if (!audioRef.current) return;
+    if (!audioRef.current || !audioUrl) return;
     if (audioRef.current.paused) {
       audioRef.current.play().catch(() => {});
     } else {
@@ -649,7 +674,7 @@ function MemoryVoicePlayer({ src, onPlay, onPause, onEnded }) {
     <div className="memory-voice-player">
       <audio
         ref={audioRef}
-        src={src}
+        src={audioUrl}
         preload="metadata"
         onPlay={() => { setIsPlaying(true); onPlay(); }}
         onPause={() => { setIsPlaying(false); onPause(); }}
