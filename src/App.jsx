@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import { useEffect, useRef, useState } from 'react';
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import { useEffect, useRef, useState } from 'react';
 import { supabase } from './lib/supabase';
 import { initBirthdaySite } from './site';
 import AdminDashboard from './AdminDashboard';
@@ -212,19 +212,22 @@ const memoryData = [
   },
   {
     title: "First Propose ❤️🩶",
-    description: "You proposed a boy studying in class 12th on 30th April 2026 @2:51",
+    description: "You proposed a boy studying in class 12th",
+    dateTime: "30th April 2026 @2:51",
     type: "video",
     src: "propose_vid.mp4" 
   },
   {
     title: "First Voice Note 🫠",
-    description: "Voice note of saying 3 magic words on 9th May 2026 @22:56",
+    description: "Voice note of saying 3 magic words",
+    dateTime: "9th May 2026 @22:56",
     type: "audio",
     src: "Iloveyou_sam.ogg"
   },
   {
     title: "First Face Pic 😍",
-    description: "Show beautiful face 👀 on 25th April 2026 @10:28",
+    description: "Show beautiful face 👀",
+    dateTime: "25th April 2026 @10:28",
     type: "video",
     src: "face_reveal.mp4" 
   }
@@ -737,7 +740,6 @@ function MemoryVideoPlayer({ src, onPlay, onPause, onEnded }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [videoRatio, setVideoRatio] = useState(9 / 16);
 
   useEffect(() => {
     let active = true;
@@ -817,10 +819,7 @@ function MemoryVideoPlayer({ src, onPlay, onPause, onEnded }) {
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div
-      className={`memory-video-custom ${isPlaying ? 'is-playing' : ''}`}
-      style={{ '--memory-video-ratio': String(videoRatio) }}
-    >
+    <div className={`memory-video-custom ${isPlaying ? 'is-playing' : ''}`}>
       {showLoader && (
         <div className="video-loader">
           <i className="fa-solid fa-circle-notch fa-spin"></i>
@@ -856,9 +855,6 @@ function MemoryVideoPlayer({ src, onPlay, onPause, onEnded }) {
             onLoadedMetadata={() => {
               const video = videoRef.current;
               setDuration(video?.duration || 0);
-              if (video?.videoWidth && video?.videoHeight) {
-                setVideoRatio(video.videoWidth / video.videoHeight);
-              }
             }}
             className={`memory-video-element ${showLoader ? 'is-loading' : ''} is-visible`}
             onClick={togglePlay}
@@ -1680,6 +1676,7 @@ function BirthdayExperience({
 
                   <div className="memory-card__body">
                     <p>{memory.description}</p>
+                    {memory.dateTime && <p className="memory-card__date-line">{memory.dateTime}</p>}
                     <div className="memory-card__media-wrap">
                       {idx === memoryIndex && memory.type === 'audio' && (
                         <MemoryVoicePlayer 

@@ -2627,7 +2627,7 @@ header p {
 }
 
 #chatToggle.is-open .chat-toggle__icon {
-  font-size: 56px;
+  font-size: 28px;
   transform: translateY(-1px);
 }
 
@@ -5797,7 +5797,7 @@ header p {
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.06);
   color: #fff;
-  font-size: 2.8rem;
+  font-size: 1.8rem;
   cursor: pointer;
 }
 
@@ -6996,7 +6996,7 @@ header p {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 22px;
   padding: 24px;
-  text-align: left;
+  text-align: center;
   height: 460px;
   display: flex;
   flex-direction: column;
@@ -7021,7 +7021,7 @@ header p {
 }
 
 .memory-card__header {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 }
 
 .memory-card__badge {
@@ -7057,6 +7057,35 @@ header p {
   font-size: 1rem;
   margin-bottom: 12px;
 }
+
+.memory-card__date-line {
+  display: block;
+  width: fit-content;
+  margin: 12px auto 20px;
+  position: relative;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ff6f8f;
+  padding-bottom: 6px;
+  letter-spacing: 0.02em;
+}
+
+.memory-card__date-line::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #ff6f8f, #ff8eb6);
+  transition: width 0.8s cubic-bezier(0.23, 1, 0.32, 1) 0.6s;
+  box-shadow: 0 0 12px rgba(255, 111, 143, 0.6);
+}
+
+.memory-slide.is-active .memory-card__date-line::after {
+  width: 100%;
+}
+
 .memory-card__media-wrap {
   width: 100%;
   height: 200px;
@@ -10075,16 +10104,16 @@ body[data-theme='classic'] .birthday-hero__title-row .hero-line:last-child .hero
 
 body[data-theme='classic'] .hero-title-wrap--dark .hero-letter {
   background: none;
-  color: #1f1411;
-  -webkit-text-fill-color: #1f1411;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
   text-shadow:
     0 1px 0 rgba(255, 255, 255, 0.75),
     0 10px 22px rgba(103, 62, 42, 0.08);
 }
 
 body[data-theme='classic'] .hero-title-wrap--dark .hero-line:last-child .hero-letter {
-  color: #5d1a1d;
-  -webkit-text-fill-color: #5d1a1d;
+  color: #ff6f8f;
+  -webkit-text-fill-color: #ff6f8f;
   text-shadow:
     0 1px 0 rgba(255, 255, 255, 0.65),
     0 10px 22px rgba(95, 43, 39, 0.08);
@@ -11676,10 +11705,6 @@ body[data-theme='classic'] #mainContent.home-shell::after {
     animation: none !important;
   }
 
-  .birthday-hero__title-row .hero-letter {
-    animation: none !important;
-  }
-
   .feature-card,
   .timeline-card,
   .timeline-stage__panel,
@@ -11723,8 +11748,9 @@ body[data-theme='classic'] #mainContent.home-shell::after {
 
 .fullscreen-video-panel {
   position: relative;
-  width: auto;
-  height: auto;
+  width: min(92vw, calc((100dvh - 16px) * 9 / 16), 540px);
+  height: min(calc(100dvh - 16px), calc(92vw * 16 / 9), 960px);
+  aspect-ratio: 9 / 16;
   max-width: calc(100vw - 16px);
   max-height: calc(100vh - 16px);
   max-height: calc(100dvh - 16px);
@@ -11761,8 +11787,8 @@ body[data-theme='classic'] #mainContent.home-shell::after {
 }
 
 .fullscreen-video-body {
-  width: auto;
-  height: auto;
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -11820,7 +11846,6 @@ body[data-theme='classic'] #mainContent.home-shell::after {
 }
 
 .memory-video-custom {
-  --memory-video-ratio: 0.5625;
   width: 100%;
   height: 100%;
   position: relative;
@@ -11832,9 +11857,9 @@ body[data-theme='classic'] #mainContent.home-shell::after {
 }
 
 .fullscreen-video-body .memory-video-custom {
-  width: min(calc(100vw - 16px), calc((100dvh - 16px) * var(--memory-video-ratio)));
-  height: min(calc(100dvh - 16px), calc((100vw - 16px) / var(--memory-video-ratio)));
-  aspect-ratio: var(--memory-video-ratio);
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 9 / 16;
 }
 
 /* Glowing Border Animation */
@@ -11876,21 +11901,27 @@ body[data-theme='classic'] #mainContent.home-shell::after {
   background: #000;
 }
 
+.fullscreen-video-body .memory-video-element {
+  object-fit: contain;
+}
+
 @media (max-width: 640px) {
   .fullscreen-video-modal {
     padding: max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
   }
 
   .fullscreen-video-panel {
-    width: auto;
-    height: auto;
+    width: min(calc(100vw - 12px), calc((100dvh - 12px) * 9 / 16));
+    height: min(calc(100dvh - 12px), calc((100vw - 12px) * 16 / 9));
     max-width: none;
+    aspect-ratio: 9 / 16;
     border-radius: 22px;
   }
 
   .fullscreen-video-body .memory-video-custom {
-    width: min(calc(100vw - 12px), calc((100dvh - 12px) * var(--memory-video-ratio)));
-    height: min(calc(100dvh - 12px), calc((100vw - 12px) / var(--memory-video-ratio)));
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 9 / 16;
   }
 
   .fullscreen-video-close {
