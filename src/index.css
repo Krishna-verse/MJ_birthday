@@ -12058,11 +12058,15 @@ body[data-theme='classic'] #mainContent.home-shell::after {
   }
 
   .home-shell,
-  .cards-stage,
   .timeline-stage,
   .birthday-finale {
     content-visibility: auto;
     contain-intrinsic-size: 1px 820px;
+  }
+
+  .cards-stage {
+    overflow: visible;
+    padding-bottom: 34px;
   }
 
   .birthday-hero__flower,
