@@ -37,6 +37,8 @@ const sharePopup = document.getElementById("sharePopup");
 const gamePopup = document.getElementById("gamePopup");
 const rizzPopup = document.getElementById("rizzPopup");
 const musicPopup = document.getElementById("musicPopup");
+const legacyPopups = [wishPopup, partyPopup, sharePopup, gamePopup, rizzPopup, musicPopup, aboutPopup, memoriesPopup, picsPopup];
+const popupCloseMs = 260;
 
 let aboutTypingTimeouts = [];
 let floatingInterval;
@@ -402,6 +404,11 @@ window.addEventListener("birthday:home-visible", handleHomeVisible);
    POPUP HELPERS
 ========================= */
 function openPopup(popup) {
+  if (popup._closeTimer) {
+    clearTimeout(popup._closeTimer);
+    popup._closeTimer = undefined;
+  }
+  popup.classList.remove("is-closing");
   popup.style.display = "block";
   overlay.classList.add("show");
   setTimeout(() => popup.classList.add("show-popup"), 10);
@@ -414,31 +421,52 @@ function openPopup(popup) {
 }
 
 function closePopup(popup, isPopState = false) {
-  popup.classList.remove("show-popup");
-  overlay.classList.remove("show");
-  if (!isPopState && window.history.state?.popupOpen) {
-    window.history.back();
+  if (!popup || popup.style.display !== "block") {
+    return;
   }
-  setTimeout(() => {
+
+  if (popup._closeTimer) {
+    clearTimeout(popup._closeTimer);
+  }
+
+  popup.classList.remove("show-popup");
+  popup.classList.add("is-closing");
+  overlay.classList.remove("show");
+
+  popup._closeTimer = setTimeout(() => {
+    popup._closeTimer = undefined;
+    popup.classList.remove("is-closing");
     popup.style.display = "none";
-    const anyOpen = [wishPopup, partyPopup, sharePopup, gamePopup, rizzPopup, musicPopup, aboutPopup, memoriesPopup, picsPopup]
+    const anyOpen = legacyPopups
       .some((p) => p && p.style.display === "block");
     if (!anyOpen && typeof document !== "undefined" && document.body) {
       document.body.classList.remove("is-scroll-locked");
       document.body.style.overflow = "";
     }
-  }, 300);
+
+    if (!isPopState && window.history.state?.popupOpen) {
+      window.history.back();
+    }
+  }, popupCloseMs);
 }
 const overlayClickHandler = (event) => {
   const isPopState = event === "popstate";
   let anyWasOpen = false;
 
-  [wishPopup, partyPopup, sharePopup, gamePopup, rizzPopup, musicPopup, aboutPopup, memoriesPopup, picsPopup].forEach(p => {
+  legacyPopups.forEach(p => {
     if (p && p.style.display === "block") {
       anyWasOpen = true;
       p.classList.remove("blur-active");
       p.classList.remove("show-popup");
-      p.style.display = "none";
+      p.classList.add("is-closing");
+      if (p._closeTimer) {
+        clearTimeout(p._closeTimer);
+      }
+      p._closeTimer = setTimeout(() => {
+        p._closeTimer = undefined;
+        p.classList.remove("is-closing");
+        p.style.display = "none";
+      }, popupCloseMs);
       if (p === rizzPopup) {
         stopHeartRain();
       }
@@ -451,8 +479,13 @@ const overlayClickHandler = (event) => {
 
   overlay.classList.remove("show");
   if (typeof document !== "undefined" && document.body) {
-    document.body.classList.remove("is-scroll-locked");
-    document.body.style.overflow = "";
+    setTimeout(() => {
+      const anyOpen = legacyPopups.some((p) => p && p.style.display === "block");
+      if (!anyOpen) {
+        document.body.classList.remove("is-scroll-locked");
+        document.body.style.overflow = "";
+      }
+    }, popupCloseMs);
   }
 
   // Reset About popup properly
@@ -647,13 +680,13 @@ function dropTopConfetti() {
   }
 
   confetti({
-    particleCount: isMobilePerformanceMode ? 7 : 12,
+    particleCount: isMobilePerformanceMode ? 5 : 12,
     angle: 90,
-    spread: isMobilePerformanceMode ? 22 : 28,
-    startVelocity: isMobilePerformanceMode ? 18 : 22,
+    spread: isMobilePerformanceMode ? 18 : 28,
+    startVelocity: isMobilePerformanceMode ? 16 : 22,
     gravity: 1.15,
-    ticks: isMobilePerformanceMode ? 130 : 180,
-    scalar: isMobilePerformanceMode ? 0.58 : 0.72,
+    ticks: isMobilePerformanceMode ? 90 : 180,
+    scalar: isMobilePerformanceMode ? 0.52 : 0.72,
     origin: {
       x: 0.1 + Math.random() * 0.8,
       y: 0
@@ -667,10 +700,10 @@ function sideConfetti() {
   }
 
   const bursts = isMobilePerformanceMode ? 2 : 3;
-  const particleCount = isMobilePerformanceMode ? 70 : 250;
-  const spread = isMobilePerformanceMode ? 62 : 90;
-  const scalar = isMobilePerformanceMode ? 0.62 : 1;
-  const startVelocity = isMobilePerformanceMode ? 34 : 45;
+  const particleCount = isMobilePerformanceMode ? 42 : 250;
+  const spread = isMobilePerformanceMode ? 54 : 90;
+  const scalar = isMobilePerformanceMode ? 0.56 : 1;
+  const startVelocity = isMobilePerformanceMode ? 28 : 45;
 
   for (let i = 0; i < bursts; i++) {
     setTimeout(() => {
@@ -699,7 +732,7 @@ function sideConfetti() {
   }
 
   dropTopConfetti();
-  confettiRainIntervalId = setInterval(dropTopConfetti, isMobilePerformanceMode ? 3600 : 2200);
+  confettiRainIntervalId = setInterval(dropTopConfetti, isMobilePerformanceMode ? 5200 : 2200);
 }
 
 function fireCardOpenConfetti() {
@@ -707,15 +740,15 @@ function fireCardOpenConfetti() {
     return;
   }
 
-  const particleCount = isMobilePerformanceMode ? 55 : 90;
-  const scalar = isMobilePerformanceMode ? 0.72 : 0.9;
+  const particleCount = isMobilePerformanceMode ? 28 : 90;
+  const scalar = isMobilePerformanceMode ? 0.58 : 0.9;
 
   confetti({
     particleCount,
-    spread: 72,
-    startVelocity: 36,
+    spread: isMobilePerformanceMode ? 58 : 72,
+    startVelocity: isMobilePerformanceMode ? 28 : 36,
     gravity: 0.95,
-    ticks: 160,
+    ticks: isMobilePerformanceMode ? 105 : 160,
     scalar,
     origin: { x: 0.5, y: 0.62 }
   });

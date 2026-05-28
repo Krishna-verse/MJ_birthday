@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import { useEffect, useRef, useState } from 'react';
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import { useEffect, useRef, useState } from 'react';
 import { supabase } from './lib/supabase';
 import { initBirthdaySite } from './site';
 import AdminDashboard from './AdminDashboard';
@@ -26,6 +26,10 @@ const getRandomPicSlideDirection = () =>
 const isAboutPrivateImage = (path = '') => {
   const fileName = path.split('/').pop() || '';
   return /^sam_pic(?:\.[^.]+)?$/i.test(fileName);
+};
+
+const isValidEmail = (email) => {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 };
 
 function PrivatePicCanvas({ pic, direction, label }) {
@@ -586,18 +590,52 @@ function AuthScreen({
 }) {
   return (
     <div className="auth-shell">
-      <div className="auth-glow auth-glow--one" />
-      <div className="auth-glow auth-glow--two" />
-      <div className="auth-card">
-        <div className="auth-badge">Birthday access</div>
-        <h1>Sign in to enter the birthday page</h1>
-        <p>The full experience stays hidden until you log in. We'll send a one-time magic link to your email.</p>
+      <video className="auth-video" src={heroBackgroundVideo} autoPlay muted loop playsInline aria-hidden="true" />
+      <div className="auth-noise" aria-hidden="true" />
+      <div className="auth-ribbon auth-ribbon--one" aria-hidden="true" />
+      <div className="auth-ribbon auth-ribbon--two" aria-hidden="true" />
+      <div className="auth-sparkles" aria-hidden="true">
+        {birthdayFinaleSparkles.slice(0, 6).map((sparkle, index) => (
+          <span
+            key={`${sparkle.symbol}-${index}`}
+            style={{
+              '--top': sparkle.top,
+              '--left': sparkle.left,
+              '--delay': sparkle.delay,
+              '--duration': sparkle.duration,
+            }}
+          >
+            {sparkle.symbol}
+          </span>
+        ))}
+      </div>
 
-        {!configured ? (
+      <main className="auth-card" aria-labelledby="authTitle">
+        <div className="auth-media" aria-hidden="true">
+          {/* <img src={flowerAsset} alt="" /> */}
+          <span className="auth-media__glow" />
+        </div>
+
+        <div className="auth-badge">
+          <i className="fa-solid fa-lock" aria-hidden="true"></i>
+          Private birthday entry
+        </div>
+        
+        <header className="auth-header">
+          <p className="auth-kicker">For MJ only</p>
+          <h1 id="authTitle">
+            <span>Welcome,</span>
+            <span>MJ</span>
+          </h1>
+          <p>A little birthday world is waiting behind this door.</p>
+        </header>
+
+        {!configured && (
           <div className="auth-status auth-status--error">
-            Sign-in is not ready yet. Add the app connection values to your env file.
+            <i className="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+            Sign-in is offline right now.
           </div>
-        ) : null}
+        )}
 
         <form
           className="auth-form"
@@ -606,32 +644,62 @@ function AuthScreen({
             onSendLink();
           }}
         >
-          <label className="auth-label" htmlFor="email">
-            Email address
-          </label>
-          <input
-            id="email"
-            type="email"
-            autoComplete="email"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="auth-input"
-            disabled={sending || cooldownRemaining > 0 || !configured}
-          />
+          <div className="auth-field">
+            <label className="auth-label" htmlFor="email">Email address</label>
+            <div className="auth-input-wrap">
+              <i className="fa-solid fa-envelope" aria-hidden="true"></i>
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                placeholder="your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="auth-input"
+                disabled={sending || cooldownRemaining > 0 || !configured}
+                required
+              />
+            </div>
+          </div>
 
-          <button className="auth-button" type="submit" disabled={sending || cooldownRemaining > 0 || !configured}>
-            {sending
-              ? 'Sending link...'
-              : cooldownRemaining > 0
-                ? `Wait ${formatWaitTime(cooldownRemaining)}`
-                : 'Send access link'}
+          <button 
+            className="auth-button" 
+            type="submit" 
+            disabled={sending || cooldownRemaining > 0 || !configured}
+          >
+            {sending ? (
+              <><i className="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i> Sending link</>
+            ) : cooldownRemaining > 0 ? (
+              <><i className="fa-solid fa-hourglass-half" aria-hidden="true"></i> Wait {formatWaitTime(cooldownRemaining)}</>
+            ) : (
+              <>Send birthday link <i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i></>
+            )}
           </button>
         </form>
 
-        {status ? <div className="auth-status">{status}</div> : null}
-        {error ? <div className="auth-status auth-status--error">{error}</div> : null}
-      </div>
+        {status && (
+          <div className="auth-status auth-status--success">
+            <i className="fa-solid fa-paper-plane" aria-hidden="true"></i>
+            {status}
+          </div>
+        )}
+        
+        {error && (
+          <div className="auth-status auth-status--error">
+            <i className="fa-solid fa-circle-xmark" aria-hidden="true"></i>
+            {error}
+          </div>
+        )}
+
+        <div className="auth-footer">
+          <p>No password. Just one private link.</p>
+          <div className="auth-footer__ornament">
+            <span></span>
+            <i className="fa-solid fa-heart" aria-hidden="true"></i>
+            <span></span>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
@@ -1108,7 +1176,7 @@ function BirthdayExperience({
     const loadPrivatePics = async () => {
       if (!supabase) {
         setPrivatePicsLoading(false);
-        setPrivatePicsError('Supabase is not configured yet.');
+        setPrivatePicsError('Private gallery is offline right now.');
         return;
       }
 
@@ -1150,7 +1218,7 @@ function BirthdayExperience({
       } catch (listError) {
         if (ignore) return;
         setPrivatePics([]);
-        setPrivatePicsError(listError.message || 'Could not load private images.');
+        setPrivatePicsError('Could not load private images right now.');
         setPrivatePicsLoading(false);
         return;
       }
@@ -1172,7 +1240,7 @@ function BirthdayExperience({
 
       if (signedError) {
         setPrivatePics([]);
-        setPrivatePicsError(signedError.message || 'Could not open private images.');
+        setPrivatePicsError('Could not open private images right now.');
         setPrivatePicsLoading(false);
         return;
       }
@@ -1990,10 +2058,8 @@ export default function App() {
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
       setSession(data.session);
-      if (data.session) {
-        setAuthReady(true);
-        setAuthLoading(false);
-      }
+      setAuthReady(true);
+      setAuthLoading(false);
     });
 
     const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
@@ -2046,13 +2112,18 @@ export default function App() {
 
   const handleSendLink = async () => {
     if (!supabase) {
-      setError('Supabase is not configured yet.');
+      setError('Sign-in is offline right now. Please try again later.');
       return;
     }
 
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
       setError('Please enter an email address.');
+      return;
+    }
+
+    if (!isValidEmail(trimmedEmail)) {
+      setError('Please enter a valid email address.');
       return;
     }
 
@@ -2100,9 +2171,7 @@ export default function App() {
         const until = Date.now() + AUTH_COOLDOWN_MS;
         writeCooldownUntil(trimmedEmail, until);
         setCooldownRemaining(AUTH_COOLDOWN_MS);
-        setError(
-          'Supabase rate-limited this magic link request. Wait 60 seconds and try again. If it keeps happening, add the email to your Supabase Team allowlist or configure custom SMTP in Supabase Auth.'
-        );
+        setError('Too many link requests. Wait 60 seconds and try again.');
         console.warn('[auth] magic link rate-limited', {
           email: trimmedEmail,
           redirectTo: authRedirectUrl,
@@ -2114,17 +2183,15 @@ export default function App() {
         message.toLowerCase().includes('team') ||
         message.toLowerCase().includes('redirect')
       ) {
-        setError(
-          'Supabase could not send the email. Check that your project has SMTP configured and that this email is allowed in the Supabase Team tab or redirect allow list.'
-        );
+        setError('Could not send the email right now. Please try again later.');
       } else {
-        setError(message);
+        setError('Could not send the magic link. Please try again.');
       }
     } else {
       const until = Date.now() + AUTH_COOLDOWN_MS;
       writeCooldownUntil(trimmedEmail, until);
       setCooldownRemaining(AUTH_COOLDOWN_MS);
-      setStatus(`Access link sent to ${trimmedEmail}. Check your inbox.`);
+      setStatus(`Magic link sent to ${trimmedEmail}. Check your inbox.`);
     }
 
     setSendingLink(false);
@@ -2132,7 +2199,7 @@ export default function App() {
 
   const handleRefreshLoginLink = async () => {
     if (!supabase) {
-      setSessionMessage('Supabase is not configured yet.');
+      setSessionMessage('Sign-in is offline right now.');
       return;
     }
 
@@ -2158,8 +2225,7 @@ export default function App() {
     });
 
     if (authError) {
-      const message = authError.message || 'Could not send the link.';
-      setSessionMessage(message);
+      setSessionMessage('Could not send the magic link. Please try again.');
       return;
     }
 

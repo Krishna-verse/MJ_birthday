@@ -1176,7 +1176,14 @@ export default function ThankYouStudio({ open, onClose, userEmail }) {
         <div className="thank-you-modal__footer">
           <p className="thank-you-modal__privacy">This didn&apos;t get public.</p>
           <button type="button" className="thank-you-submit-btn" onClick={handleSend} disabled={uploading || !open}>
-            {uploading ? 'Sending...' : 'Send it...'}
+            {uploading ? (
+              'Sending...'
+            ) : (
+              <>
+                <i className="fa-solid fa-upload" aria-hidden="true"></i>
+                Send it...
+              </>
+            )}
           </button>
         </div>
           </>
