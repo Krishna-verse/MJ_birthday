@@ -3152,8 +3152,8 @@ header p {
 }
 
 .chat-msg--user {
-  background: linear-gradient(135deg, #f4f4f4, #dedede);
-  color: #101010;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.1));
+  color: #ffffff;
   border-bottom-right-radius: 6px;
 }
 
@@ -3248,7 +3248,13 @@ header p {
   transform: translateY(-1px);
   background: rgba(255, 255, 255, 0.12);
   border-color: rgba(255, 255, 255, 0.16);
-  color: #101010;
+  color: #ffffff;
+}
+
+.quick-btns button:focus,
+.quick-btns button:active,
+.quick-btns button:focus-visible {
+  color: #ffffff;
 }
 
 .bot-msg, .user-msg {

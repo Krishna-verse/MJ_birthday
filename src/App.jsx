@@ -399,11 +399,11 @@ const getChatReply = (message) => {
   }
 
   if (/(about you|about|facts|cute facts)/.test(normalized)) {
-    return 'About You is the sweet little ego boost section. 🫶';
+    return 'Little thing that i know about you!! 🫶';
   }
 
   if (/(rizz|smooth|line|flirt)/.test(normalized)) {
-    return 'Rizz for You is for dramatic entrance energy. 😏';
+    return 'Some pickup lines for you';
   }
 
   if (/(what should i open first|where should i start|start|first)/.test(normalized)) {
