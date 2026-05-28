@@ -278,8 +278,11 @@ const birthdayFinaleSparkles = [
 const getNextBirthdayTarget = (referenceTime = Date.now()) => {
   const now = new Date(referenceTime);
   let target = new Date(now.getFullYear(), birthdayMonthIndex, birthdayDay, 0, 0, 0, 0);
+  const isBirthdayToday =
+    now.getMonth() === birthdayMonthIndex &&
+    now.getDate() === birthdayDay;
 
-  if (referenceTime >= target.getTime()) {
+  if (!isBirthdayToday && referenceTime >= target.getTime()) {
     target = new Date(now.getFullYear() + 1, birthdayMonthIndex, birthdayDay, 0, 0, 0, 0);
   }
 
@@ -298,7 +301,7 @@ const formatBirthdayCountdown = (referenceTime = Date.now()) => {
 
   return {
     value: remaining === 0
-      ? 'TODAY'
+      ? 'Its today ...'
       : days > 0
         ? `${days} ${dayLabel} LEFT`
         : `${hours} HOUR${hours === 1 ? '' : 'S'} LEFT`,
@@ -315,10 +318,9 @@ function BirthdayCountdown({ now }) {
   return (
     <div
       className="hero-chip birthday-hero__chip birthday-hero__chip--countdown"
-      aria-label={`Birthday countdown ${countdown.value}${countdown.detail ? `, ${countdown.detail}` : ''}`}
+      aria-label={`Birthday ${countdown.value}${countdown.detail ? `, ${countdown.detail}` : ''}`}
       aria-describedby={detailId}
     >
-      <span className="birthday-hero__chip-label">Countdown</span>
       <span className="birthday-hero__chip-value">{countdown.value}</span>
       <span className="birthday-hero__chip-detail" id={detailId}>
         {countdown.detail}
