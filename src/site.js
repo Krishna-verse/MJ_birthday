@@ -403,6 +403,37 @@ window.addEventListener("birthday:home-visible", handleHomeVisible);
 /* =========================
    POPUP HELPERS
 ========================= */
+function hasOpenReactPopup() {
+  return Boolean(
+    document.querySelector(
+      "#chatbot.is-open, .thank-you-modal.is-open, .sign-out-modal, .fullscreen-video-modal"
+    )
+  );
+}
+
+function lockPageScrollForPopup() {
+  if (typeof document === "undefined" || !document.body) {
+    return;
+  }
+
+  document.documentElement.classList.add("is-scroll-locked");
+  document.body.classList.add("is-scroll-locked");
+  document.body.style.overflow = "hidden";
+}
+
+function unlockPageScrollIfIdle() {
+  if (typeof document === "undefined" || !document.body) {
+    return;
+  }
+
+  const anyOpen = legacyPopups.some((p) => p && p.style.display === "block");
+  if (!anyOpen && !hasOpenReactPopup()) {
+    document.documentElement.classList.remove("is-scroll-locked");
+    document.body.classList.remove("is-scroll-locked");
+    document.body.style.overflow = "";
+  }
+}
+
 function openPopup(popup) {
   if (popup._closeTimer) {
     clearTimeout(popup._closeTimer);
@@ -412,10 +443,7 @@ function openPopup(popup) {
   popup.style.display = "block";
   overlay.classList.add("show");
   setTimeout(() => popup.classList.add("show-popup"), 10);
-  if (typeof document !== "undefined" && document.body) {
-    document.body.classList.add("is-scroll-locked");
-    document.body.style.overflow = "hidden";
-  }
+  lockPageScrollForPopup();
   window.history.pushState({ popupOpen: true }, "");
   fireCardOpenConfetti();
 }
@@ -437,12 +465,7 @@ function closePopup(popup, isPopState = false) {
     popup._closeTimer = undefined;
     popup.classList.remove("is-closing");
     popup.style.display = "none";
-    const anyOpen = legacyPopups
-      .some((p) => p && p.style.display === "block");
-    if (!anyOpen && typeof document !== "undefined" && document.body) {
-      document.body.classList.remove("is-scroll-locked");
-      document.body.style.overflow = "";
-    }
+    unlockPageScrollIfIdle();
 
     if (!isPopState && window.history.state?.popupOpen) {
       window.history.back();
@@ -478,15 +501,7 @@ const overlayClickHandler = (event) => {
   }
 
   overlay.classList.remove("show");
-  if (typeof document !== "undefined" && document.body) {
-    setTimeout(() => {
-      const anyOpen = legacyPopups.some((p) => p && p.style.display === "block");
-      if (!anyOpen) {
-        document.body.classList.remove("is-scroll-locked");
-        document.body.style.overflow = "";
-      }
-    }, popupCloseMs);
-  }
+  setTimeout(unlockPageScrollIfIdle, popupCloseMs);
 
   // Reset About popup properly
   aboutTypingTimeouts.forEach(timeout => clearTimeout(timeout));

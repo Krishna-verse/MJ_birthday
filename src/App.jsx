@@ -144,12 +144,13 @@ const unlockBodyScroll = () => {
     (popup) => popup.style.display === 'block'
   );
   const hasOpenReactPopup = document.querySelector(
-    '#chatbot.is-open, .thank-you-modal.is-open, .sign-out-modal'
+    '#chatbot.is-open, .thank-you-modal.is-open, .sign-out-modal, .fullscreen-video-modal'
   );
 
   if (!hasOpenLegacyPopup && !hasOpenReactPopup) {
     document.documentElement.classList.remove('is-scroll-locked');
     document.body.classList.remove('is-scroll-locked');
+    document.body.style.overflow = '';
   }
 };
 
