@@ -161,8 +161,10 @@ body {
   user-select: none;
 }
 
+html.is-scroll-locked,
 body.is-scroll-locked {
   overflow: hidden;
+  overscroll-behavior: none;
 }
 
 input,
@@ -290,8 +292,8 @@ select,
   object-fit: cover;
   object-position: center;
   z-index: 0;
-  opacity: 0.42;
-  filter: saturate(1.05) brightness(1.03) contrast(0.98);
+  opacity: 1;
+  filter: none;
   pointer-events: none;
   user-select: none;
 }
@@ -3168,7 +3170,8 @@ header p {
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.06);
-  color: #fff;
+  color: #fff !important;
+  caret-color: #fff;
   padding: 12px 14px;
   outline: none;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.18);
@@ -3179,8 +3182,17 @@ header p {
 }
 
 .chat-input:focus {
+  color: #fff !important;
+  caret-color: #fff;
   border-color: rgba(255, 255, 255, 0.28);
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
+}
+
+.chat-input:-webkit-autofill,
+.chat-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #fff;
+  caret-color: #fff;
+  transition: background-color 9999s ease-out;
 }
 
 .chat-send {
@@ -3595,9 +3607,14 @@ header p {
   overflow: visible;
   z-index: 0;
   border-radius: 20px;
-  padding: 2px;
-  background: linear-gradient(135deg, rgba(255, 72, 72, 0.88), rgba(70, 18, 18, 0.95));
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.45);
+  padding: 0;
+  background: transparent;
+  box-shadow:
+    0 18px 38px rgba(0, 0, 0, 0.48),
+    0 0 28px rgba(var(--music-glow-primary), 0.36),
+    0 0 52px rgba(var(--music-glow-secondary), 0.22),
+    0 0 0 1px rgba(var(--music-glow-highlight), 0.14);
+  transition: box-shadow 0.35s ease;
 }
 
 .music-player__art-wrap::before,
@@ -3657,6 +3674,15 @@ header p {
   border-radius: 18px;
   display: block;
   background: #090909;
+}
+
+.music-popup.is-playing .music-player__art-wrap {
+  box-shadow:
+    0 20px 42px rgba(0, 0, 0, 0.52),
+    0 0 34px rgba(var(--music-glow-primary), 0.52),
+    0 0 68px rgba(var(--music-glow-secondary), 0.34),
+    0 0 96px rgba(var(--music-glow-core), 0.24),
+    0 0 0 1px rgba(var(--music-glow-highlight), 0.18);
 }
 
 .music-popup.is-playing .music-player__halo {
@@ -10377,8 +10403,8 @@ body[data-theme='classic'] #startScreen::after {
 
 body[data-theme='classic'] .birthday-hero__bg-video {
   display: block;
-  opacity: 0.4;
-  filter: saturate(1.05) brightness(1.02);
+  opacity: 1;
+  filter: none;
 }
 
 @media (min-width: 769px) and (max-width: 1180px) {

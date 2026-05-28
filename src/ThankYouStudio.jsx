@@ -812,7 +812,7 @@ export default function ThankYouStudio({ open, onClose, userEmail }) {
             <div className="thank-you-success__glow thank-you-success__glow--two" />
 
             <div className="thank-you-success__card">
-              <div className="thank-you-success__badge">Sent to Krishna</div>
+              <div className="thank-you-success__badge">Sent to Arias</div>
               <div className="thank-you-success__mark">
                 <span>✓</span>
               </div>

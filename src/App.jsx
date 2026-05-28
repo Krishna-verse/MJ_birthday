@@ -134,6 +134,7 @@ function PrivatePicCanvas({ pic, direction, label }) {
 
 const lockBodyScroll = () => {
   if (typeof document === 'undefined') return;
+  document.documentElement.classList.add('is-scroll-locked');
   document.body.classList.add('is-scroll-locked');
 };
 
@@ -147,6 +148,7 @@ const unlockBodyScroll = () => {
   );
 
   if (!hasOpenLegacyPopup && !hasOpenReactPopup) {
+    document.documentElement.classList.remove('is-scroll-locked');
     document.body.classList.remove('is-scroll-locked');
   }
 };
