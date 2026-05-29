@@ -59,8 +59,29 @@ function pauseBackgroundMusicForPlayer() {
   bgLoop.pause();
 }
 
+function isPopupAudiblyActive(popup) {
+  return Boolean(
+    popup &&
+    popup.style.display === "block" &&
+    !popup.classList.contains("is-closing")
+  );
+}
+
+function shouldKeepBackgroundMuted() {
+  return (
+    isPopupAudiblyActive(musicPopup) ||
+    isPopupAudiblyActive(memoriesPopup) ||
+    Boolean(document.querySelector(".fullscreen-video-modal"))
+  );
+}
+
 function resumeBackgroundLoop() {
-  if (!bgLoop || isPlaying || (audioPlayer && !audioPlayer.paused)) {
+  if (
+    !bgLoop ||
+    isPlaying ||
+    shouldKeepBackgroundMuted() ||
+    (audioPlayer && !audioPlayer.paused)
+  ) {
     return;
   }
 
@@ -474,6 +495,8 @@ function closePopup(popup, isPopState = false) {
 }
 const overlayClickHandler = (event) => {
   const isPopState = event === "popstate";
+  const isMusicOpen = isPopupAudiblyActive(musicPopup);
+  const isMemoriesOpen = isPopupAudiblyActive(memoriesPopup);
   let anyWasOpen = false;
 
   legacyPopups.forEach(p => {
@@ -524,7 +547,7 @@ const overlayClickHandler = (event) => {
   }
 
   if (isMemoriesOpen) {
-    resumeBackgroundLoop();
+    setTimeout(resumeBackgroundLoop, popupCloseMs + 20);
   }
 };
 overlay.addEventListener("click", overlayClickHandler);
@@ -570,7 +593,7 @@ function closeWish() {
 function closeShare() { closePopup(sharePopup); }
 function closeMemories() { 
   closePopup(memoriesPopup); 
-  resumeBackgroundLoop();
+  setTimeout(resumeBackgroundLoop, popupCloseMs + 20);
 }
 function closePics() { closePopup(picsPopup); }
 
@@ -1525,6 +1548,10 @@ function resumeAudioAfterRecording() {
 
   const state = recordingAudioState;
   recordingAudioState = null;
+
+  if (shouldKeepBackgroundMuted()) {
+    return;
+  }
 
   if (state.audioPlayerWasPlaying && audioPlayer) {
     isPlaying = true;

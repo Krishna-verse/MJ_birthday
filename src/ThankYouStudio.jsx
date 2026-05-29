@@ -154,11 +154,25 @@ function createAttachment(file, kind) {
 
 function VoiceAttachmentPlayer({ src, name }) {
   const audioRef = useRef(null);
+  const wasPlayingRef = useRef(false);
   const [playing, setPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
 
   const progress = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
+
+  useEffect(() => {
+    return () => {
+      const audio = audioRef.current;
+      const wasPlaying = wasPlayingRef.current || Boolean(audio && !audio.paused);
+      if (audio && !audio.paused) {
+        audio.pause();
+      }
+      if (wasPlaying) {
+        window.dispatchEvent(new CustomEvent('birthday:recording-audio-resume'));
+      }
+    };
+  }, []);
 
   const togglePlayback = () => {
     const audio = audioRef.current;
@@ -187,9 +201,21 @@ function VoiceAttachmentPlayer({ src, name }) {
         preload="metadata"
         onLoadedMetadata={(event) => setDuration(event.currentTarget.duration || 0)}
         onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime || 0)}
-        onPlay={() => setPlaying(true)}
-        onPause={() => setPlaying(false)}
-        onEnded={() => setPlaying(false)}
+        onPlay={() => {
+          wasPlayingRef.current = true;
+          setPlaying(true);
+          pauseBackgroundAudioForRecording();
+        }}
+        onPause={() => {
+          wasPlayingRef.current = false;
+          setPlaying(false);
+          resumeBackgroundAudioAfterRecording();
+        }}
+        onEnded={() => {
+          wasPlayingRef.current = false;
+          setPlaying(false);
+          resumeBackgroundAudioAfterRecording();
+        }}
       />
       <button
         type="button"

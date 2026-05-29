@@ -711,6 +711,7 @@ function AuthScreen({
 
 function MemoryVoicePlayer({ src, onPlay, onPause, onEnded }) {
   const audioRef = useRef(null);
+  const wasPlayingRef = useRef(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -742,8 +743,14 @@ function MemoryVoicePlayer({ src, onPlay, onPause, onEnded }) {
 
     return () => {
       active = false;
-      // Ensure background music resumes if this component unmounts while playing
-      window.dispatchEvent(new CustomEvent('birthday:recording-audio-resume'));
+      const audio = audioRef.current;
+      const wasPlaying = wasPlayingRef.current || Boolean(audio && !audio.paused);
+      if (audio && !audio.paused) {
+        audio.pause();
+      }
+      if (wasPlaying) {
+        window.dispatchEvent(new CustomEvent('birthday:recording-audio-resume'));
+      }
     };
   }, [src]);
 
@@ -770,9 +777,9 @@ function MemoryVoicePlayer({ src, onPlay, onPause, onEnded }) {
         ref={audioRef}
         src={audioUrl}
         preload="metadata"
-        onPlay={() => { setIsPlaying(true); onPlay(); }}
-        onPause={() => { setIsPlaying(false); onPause(); }}
-        onEnded={() => { setIsPlaying(false); onEnded(); }}
+        onPlay={() => { wasPlayingRef.current = true; setIsPlaying(true); onPlay(); }}
+        onPause={() => { wasPlayingRef.current = false; setIsPlaying(false); onPause(); }}
+        onEnded={() => { wasPlayingRef.current = false; setIsPlaying(false); onEnded(); }}
         onTimeUpdate={() => setCurrentTime(audioRef.current.currentTime)}
         onLoadedMetadata={() => setDuration(audioRef.current.duration)}
       />
@@ -805,6 +812,7 @@ function MemoryVoicePlayer({ src, onPlay, onPause, onEnded }) {
 
 function MemoryVideoPlayer({ src, onPlay, onPause, onEnded }) {
   const videoRef = useRef(null);
+  const wasPlayingRef = useRef(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [videoUrl, setVideoUrl] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -846,8 +854,14 @@ function MemoryVideoPlayer({ src, onPlay, onPause, onEnded }) {
     getSecureUrl();
     return () => {
       active = false;
-      // Ensure background music resumes when the player is closed/unmounted
-      window.dispatchEvent(new CustomEvent('birthday:recording-audio-resume'));
+      const video = videoRef.current;
+      const wasPlaying = wasPlayingRef.current || Boolean(video && !video.paused);
+      if (video && !video.paused) {
+        video.pause();
+      }
+      if (wasPlaying) {
+        window.dispatchEvent(new CustomEvent('birthday:recording-audio-resume'));
+      }
     };
   }, [src]);
 
@@ -921,9 +935,9 @@ function MemoryVideoPlayer({ src, onPlay, onPause, onEnded }) {
             onCanPlay={() => { setLoading(false); }}
             onWaiting={() => setIsBuffering(true)}
             onPlaying={() => { setIsBuffering(false); setLoading(false); setIsPlaying(true); }}
-            onPlay={() => { setIsPlaying(true); onPlay(); }}
-            onPause={() => { setIsPlaying(false); onPause(); }}
-            onEnded={() => { setIsPlaying(false); onEnded(); }}
+            onPlay={() => { wasPlayingRef.current = true; setIsPlaying(true); onPlay(); }}
+            onPause={() => { wasPlayingRef.current = false; setIsPlaying(false); onPause(); }}
+            onEnded={() => { wasPlayingRef.current = false; setIsPlaying(false); onEnded(); }}
             onTimeUpdate={() => setCurrentTime(videoRef.current?.currentTime || 0)}
             onLoadedMetadata={() => {
               const video = videoRef.current;
